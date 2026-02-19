@@ -62,6 +62,7 @@ export function CalculatorWizard() {
 
     const isCoreFieldSet = (value: string) => value.trim().length > 0;
 
+    const canFillTowerCapability = thermalConditions.solveFor !== 'towerCapability';
     const canFillPower =
       thermalConditions.solveFor === 'towerCapability' ||
       thermalConditions.solveFor === 'coldWater' ||
@@ -76,6 +77,7 @@ export function CalculatorWizard() {
       thermalConditions.solveFor === 'coldWater';
 
     const requiredSolvedInputs = [
+      !canFillTowerCapability || isCoreFieldSet(thermalConditions.towerCapability),
       !canFillPower || isCoreFieldSet(thermalConditions.power),
       !canFillColdWater || isCoreFieldSet(thermalConditions.coldWater),
       !canFillTotalWater || isCoreFieldSet(thermalConditions.totalWaterFlow),

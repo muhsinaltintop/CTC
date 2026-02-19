@@ -10,7 +10,7 @@ export const initialCalculatorData: CalculatorData = {
   },
   thermalConditions: {
     solveFor: 'towerCapability',
-    towerCapability: '',
+    towerCapability: '', // editable unless solveFor is towerCapability
     power: '',
     coldWater: '',
     totalWaterFlow: '',

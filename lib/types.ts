@@ -12,6 +12,7 @@ export interface ProjectInformation {
 }
 
 export interface ThermalConditions {
+  // Solve-for selection controls which thermal inputs are editable.
   solveFor: SolveFor;
   towerCapability: string;
   power: string;

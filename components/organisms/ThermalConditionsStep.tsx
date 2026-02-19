@@ -34,6 +34,7 @@ export function ThermalConditionsStep({
   onNext,
   onEdit
 }: ThermalConditionsStepProps) {
+  const canFillTowerCapability = data.solveFor !== 'towerCapability';
   const canFillPower = data.solveFor === 'towerCapability' || data.solveFor === 'coldWater' || data.solveFor === 'totalWaterFlow';
   const canFillColdWater = data.solveFor === 'towerCapability' || data.solveFor === 'power' || data.solveFor === 'totalWaterFlow';
   const canFillTotalWater = data.solveFor === 'towerCapability' || data.solveFor === 'power' || data.solveFor === 'coldWater';
@@ -73,10 +74,10 @@ export function ThermalConditionsStep({
             type="number"
             step="any"
             label="Tower Capability"
-            placeholder="Calculated from other inputs"
+            placeholder="Enter when solving for other values"
             value={data.towerCapability}
             onChange={(event) => onChange({ towerCapability: event.target.value })}
-            disabled
+            disabled={!editable || !canFillTowerCapability}
           />
 
           <Input
