@@ -1,7 +1,20 @@
+/* ---------------- ENUMS ---------------- */
+
 export type TowerType = 'counterflow';
+
 export type UnitStandard = 'si';
-export type SolveFor = 'towerCapability' | 'power' | 'coldWater' | 'totalWaterFlow';
-export type PressureInputMode = 'altitude' | 'barometricPressure';
+
+export type SolveFor =
+  | 'towerCapability'
+  | 'power'
+  | 'coldWater'
+  | 'totalWaterFlow';
+
+export type PressureInputMode =
+  | 'altitude'
+  | 'barometricPressure';
+
+/* ---------------- PROJECT ---------------- */
 
 export interface ProjectInformation {
   projectName: string;
@@ -11,9 +24,13 @@ export interface ProjectInformation {
   city: string;
 }
 
+/* ---------------- THERMAL ---------------- */
+
 export interface ThermalConditions {
-  // Solve-for selection controls which thermal inputs are editable.
+  /* Solve-for selection */
   solveFor: SolveFor;
+
+  /* Core Inputs */
   towerCapability: string;
   power: string;
   coldWater: string;
@@ -21,16 +38,24 @@ export interface ThermalConditions {
   wetBulb: string;
   relativeHumidity: string;
   range: string;
+
+  /* Atmospheric */
   pressureInputMode: PressureInputMode;
   altitude: string;
   barometricPressure: string;
+
+  /* Calculated */
   hotWater: string;
   approach: string;
 }
 
+/* ---------------- GEOMETRY ---------------- */
+
 export interface TowerGeometry {
   notes: string;
 }
+
+/* ---------------- ROOT ---------------- */
 
 export interface CalculatorData {
   projectInformation: ProjectInformation;

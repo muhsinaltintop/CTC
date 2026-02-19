@@ -1,11 +1,18 @@
 import { Button } from '@/components/atoms/Button';
+<<<<<<< codex/create-initial-page-project-information-mobin1
 import { Input } from '@/components/atoms/Input';
 import { StepHeader } from '@/components/molecules/StepHeader';
 import { PressureInputMode, SolveFor, ThermalConditions } from '@/lib/types';
+=======
+import { TextArea } from '@/components/atoms/TextArea';
+import { StepHeader } from '@/components/molecules/StepHeader';
+import { ThermalConditions } from '@/lib/types';
+>>>>>>> main
 
 interface ThermalConditionsStepProps {
   data: ThermalConditions;
   editable: boolean;
+<<<<<<< codex/create-initial-page-project-information-mobin1
   canEdit: boolean;
   canContinue: boolean;
   onChange: (value: Partial<ThermalConditions>) => void;
@@ -39,15 +46,36 @@ export function ThermalConditionsStep({
   const canFillColdWater = data.solveFor === 'towerCapability' || data.solveFor === 'power' || data.solveFor === 'totalWaterFlow';
   const canFillTotalWater = data.solveFor === 'towerCapability' || data.solveFor === 'power' || data.solveFor === 'coldWater';
 
+=======
+  onChange: (value: Partial<ThermalConditions>) => void;
+  onCalculate: () => void;
+  onEdit: () => void;
+  canEdit: boolean;
+}
+
+export function ThermalConditionsStep({
+  data,
+  editable,
+  onChange,
+  onCalculate,
+  onEdit,
+  canEdit
+}: ThermalConditionsStepProps) {
+>>>>>>> main
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <StepHeader
         title="Thermal Conditions"
+<<<<<<< codex/create-initial-page-project-information-mobin1
         description="Please complete the information below:"
+=======
+        description="Step 2 skeleton. The detailed thermal input fields will be added in the next iteration."
+>>>>>>> main
         canEdit={canEdit}
         onEdit={onEdit}
       />
 
+<<<<<<< codex/create-initial-page-project-information-mobin1
       <div className="space-y-5">
         <fieldset className="space-y-2">
           <legend className="text-sm font-semibold text-slate-800">Solve for:</legend>
@@ -194,6 +222,21 @@ export function ThermalConditionsStep({
         <div className="mt-5 flex justify-end">
           <Button onClick={onNext} disabled={!canContinue}>
             Next: Tower Geometry
+=======
+      <TextArea
+        id="thermalNotes"
+        label="Notes"
+        placeholder="Optional notes for upcoming thermal inputs..."
+        value={data.notes}
+        onChange={(event) => onChange({ notes: event.target.value })}
+        disabled={!editable}
+      />
+
+      {editable ? (
+        <div className="mt-5 flex justify-end">
+          <Button variant="secondary" onClick={onCalculate}>
+            Calculate
+>>>>>>> main
           </Button>
         </div>
       ) : null}

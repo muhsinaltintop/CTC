@@ -8,21 +8,30 @@ export const initialCalculatorData: CalculatorData = {
     country: '',
     city: ''
   },
+
   thermalConditions: {
+    /* Solve For */
     solveFor: 'towerCapability',
-    towerCapability: '', // editable unless solveFor is towerCapability
+
+    /* Core Thermal Inputs */
+    towerCapability: '',
     power: '',
     coldWater: '',
     totalWaterFlow: '',
     wetBulb: '',
     relativeHumidity: '',
     range: '',
+
+    /* Atmospheric */
     pressureInputMode: 'altitude',
     altitude: '',
     barometricPressure: '',
+
+    /* Calculated */
     hotWater: '',
     approach: ''
   },
+
   towerGeometry: {
     notes: ''
   }

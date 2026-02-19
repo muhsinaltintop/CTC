@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ProjectInformationStep } from '@/components/organisms/ProjectInformationStep';
 import { ThermalConditionsStep } from '@/components/organisms/ThermalConditionsStep';
+<<<<<<< codex/create-initial-page-project-information-mobin1
 import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
@@ -28,6 +29,16 @@ export function CalculatorWizard() {
   const [activeStep, setActiveStep] = useState<0 | 1 | 2>(0);
   const [highestUnlockedStep, setHighestUnlockedStep] = useState<0 | 1 | 2>(0);
   const [calculatorData, setCalculatorData] = useState<CalculatorData>(initialCalculatorData);
+=======
+import { initialCalculatorData } from '@/lib/constants';
+import { CalculatorData } from '@/lib/types';
+
+export function CalculatorWizard() {
+  const [activeStep, setActiveStep] = useState<0 | 1>(0);
+  const [calculatorData, setCalculatorData] = useState<CalculatorData>(initialCalculatorData);
+  const [isThermalStepUnlocked, setIsThermalStepUnlocked] = useState(false);
+  const [resultMessage, setResultMessage] = useState<string>('');
+>>>>>>> main
 
   const summaryRows = useMemo(
     () => [
@@ -36,6 +47,7 @@ export function CalculatorWizard() {
       ['Unit Standards', calculatorData.projectInformation.unitStandard.toUpperCase()],
       ['Country', calculatorData.projectInformation.country || '-'],
       ['City', calculatorData.projectInformation.city || '-'],
+<<<<<<< codex/create-initial-page-project-information-mobin1
       ['Solve For', calculatorData.thermalConditions.solveFor],
       ['Power', calculatorData.thermalConditions.power || '-'],
       ['Cold Water (°C)', calculatorData.thermalConditions.coldWater || '-'],
@@ -48,10 +60,14 @@ export function CalculatorWizard() {
       ['Hot Water (°C)', calculatorData.thermalConditions.hotWater || '-'],
       ['Approach (°C)', calculatorData.thermalConditions.approach || '-'],
       ['Tower Geometry Notes', calculatorData.towerGeometry.notes || '-']
+=======
+      ['Thermal Notes', calculatorData.thermalConditions.notes || '-']
+>>>>>>> main
     ],
     [calculatorData]
   );
 
+<<<<<<< codex/create-initial-page-project-information-mobin1
   const canContinueFromThermal = useMemo(() => {
     const { thermalConditions } = calculatorData;
 
@@ -105,6 +121,12 @@ export function CalculatorWizard() {
         thermalConditions: { ...merged, ...calculated }
       };
     });
+=======
+  const onCalculate = () => {
+    setResultMessage(
+      `Calculation trigger ready. Stored project: ${calculatorData.projectInformation.projectName || 'Unnamed Project'}.`
+    );
+>>>>>>> main
   };
 
   return (
@@ -128,6 +150,7 @@ export function CalculatorWizard() {
               }))
             }
             onNext={() => {
+<<<<<<< codex/create-initial-page-project-information-mobin1
               setHighestUnlockedStep(1);
               setActiveStep(1);
             }}
@@ -162,6 +185,34 @@ export function CalculatorWizard() {
                 towerGeometry: { ...previous.towerGeometry, ...value }
               }))
             }
+=======
+              setIsThermalStepUnlocked(true);
+              setActiveStep(1);
+              setResultMessage('');
+            }}
+            onEdit={() => {
+              setActiveStep(0);
+              setResultMessage('');
+            }}
+          />
+
+          <ThermalConditionsStep
+            data={calculatorData.thermalConditions}
+            editable={activeStep === 1 && isThermalStepUnlocked}
+            onChange={(value) =>
+              setCalculatorData((previous) => ({
+                ...previous,
+                thermalConditions: { ...previous.thermalConditions, ...value }
+              }))
+            }
+            onCalculate={onCalculate}
+            canEdit={isThermalStepUnlocked && activeStep !== 1}
+            onEdit={() => {
+              if (!isThermalStepUnlocked) return;
+              setActiveStep(1);
+              setResultMessage('');
+            }}
+>>>>>>> main
           />
         </div>
 
@@ -176,6 +227,15 @@ export function CalculatorWizard() {
               </div>
             ))}
           </dl>
+<<<<<<< codex/create-initial-page-project-information-mobin1
+=======
+
+          {resultMessage ? (
+            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              {resultMessage}
+            </div>
+          ) : null}
+>>>>>>> main
         </aside>
       </div>
     </main>
