@@ -75,10 +75,26 @@ export function CalculatorWizard() {
       ['Hot Water (°C)', calculatorData.thermalConditions.hotWater || '-'],
       ['Approach (°C)', calculatorData.thermalConditions.approach || '-'],
 
+      ['No. of Cells', calculatorData.towerGeometry.noOfCells || '-'],
       [
-        'Tower Geometry Notes',
-        calculatorData.towerGeometry.notes || '-'
-      ]
+        'Cell Arrangement',
+        calculatorData.towerGeometry.cellArrangement === 'backToBack'
+          ? 'Back to Back'
+          : 'Inline'
+      ],
+      [
+        'Air Inlet Configuration',
+        {
+          bothEndsOpen: 'Both Ends Open',
+          bothEndsClosed: 'Both Ends Closed',
+          leftEndClosed: 'Left End Closed',
+          rightEndClosed: 'Right End Closed',
+          threeSidesClosed: '3 Sides Closed'
+        }[calculatorData.towerGeometry.airInletConfiguration]
+      ],
+      ['Inlet Height (m)', calculatorData.towerGeometry.inletHeight || '-'],
+      ['Cell Width (m)', calculatorData.towerGeometry.cellWidth || '-'],
+      ['Cell Length (m)', calculatorData.towerGeometry.cellLength || '-']
     ],
     [calculatorData]
   );

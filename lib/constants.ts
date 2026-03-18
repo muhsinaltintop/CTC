@@ -33,6 +33,14 @@ export const initialCalculatorData: CalculatorData = {
   },
 
   towerGeometry: {
-    notes: ''
+    noOfCells: '1',
+    cellArrangement: 'inline',
+    airInletConfiguration: 'bothEndsOpen',
+    louverType: 'Louvers Type',
+    louverCoeff: '2.15',
+    inletObstruction: '1.0',
+    inletHeight: '',
+    cellWidth: '',
+    cellLength: '16'
   }
 };
