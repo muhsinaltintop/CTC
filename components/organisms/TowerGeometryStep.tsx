@@ -46,6 +46,20 @@ function formatMeters(value: number): string {
   return value.toFixed(2);
 }
 
+function getInletWallState(configuration: AirInletConfiguration) {
+  return {
+    leftClosed:
+      configuration === 'bothEndsClosed' ||
+      configuration === 'leftEndClosed' ||
+      configuration === 'threeSidesClosed',
+    rightClosed:
+      configuration === 'bothEndsClosed' ||
+      configuration === 'rightEndClosed' ||
+      configuration === 'threeSidesClosed',
+    topClosed: configuration === 'threeSidesClosed'
+  };
+}
+
 export function TowerGeometryStep({
   data,
   editable,
@@ -63,6 +77,18 @@ export function TowerGeometryStep({
 
   const netTotalInletArea =
     noOfCells * inletHeight * cellWidth * (1 - obstruction / 100);
+
+  const previewCells = Math.max(1, Math.min(30, noOfCells || 1));
+  const isBackToBack = data.cellArrangement === 'backToBack';
+  const previewColumns = isBackToBack
+    ? previewCells >= 4
+      ? 2
+      : 1
+    : previewCells;
+
+  const { leftClosed, rightClosed, topClosed } = getInletWallState(
+    data.airInletConfiguration
+  );
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -118,16 +144,38 @@ export function TowerGeometryStep({
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700">
-            <p className="mb-2 font-semibold text-slate-800">
-              Tower Layout Sketch (simple)
-            </p>
-            <div className="rounded border border-dashed border-slate-300 bg-white p-3 font-mono">
-              ┌──────────────────────────────┐
-              <br />
-              │&nbsp;CELL&nbsp;1&nbsp;|&nbsp;CELL&nbsp;2&nbsp;|&nbsp;...&nbsp;|&nbsp;CELL&nbsp;N&nbsp;│
-              <br />
-              └──────────────────────────────┘
+            <p className="mb-2 font-semibold text-slate-800">Tower Layout Preview</p>
+
+            <div className="overflow-x-auto rounded border border-dashed border-slate-300 bg-white p-4">
+              <div
+                className={[
+                  'inline-block rounded-sm border-b-2 border-b-slate-400 p-2',
+                  leftClosed ? 'border-l-4 border-l-slate-500' : 'border-l-4 border-l-transparent',
+                  rightClosed ? 'border-r-4 border-r-slate-500' : 'border-r-4 border-r-transparent',
+                  topClosed ? 'border-t-4 border-t-slate-500' : 'border-t-4 border-t-transparent'
+                ].join(' ')}
+              >
+                <div
+                  className="grid gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${previewColumns}, minmax(54px, 54px))`
+                  }}
+                >
+                  {Array.from({ length: previewCells }, (_, index) => (
+                    <div
+                      key={`cell-preview-${index + 1}`}
+                      className="flex h-12 w-[54px] items-center justify-center rounded border-2 border-sky-500 bg-sky-100 text-[11px] font-semibold text-sky-900"
+                    >
+                      C{index + 1}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            <p className="mt-2 text-[11px] text-slate-500">
+              Closed inlet sides are shown with solid dark boundary lines.
+            </p>
           </div>
 
           <p className="text-sm font-medium text-slate-700">
