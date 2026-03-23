@@ -15,6 +15,7 @@ interface PlenumFanStepProps {
   onChange: (value: Partial<PlenumFan>) => void;
 }
 
+// Keeping option list local for now; future eliminator catalog can be wired here.
 const driftEliminatorOptions = [{ value: 'CF80MAx', label: 'CF80MAx' }];
 
 export function PlenumFanStep({
