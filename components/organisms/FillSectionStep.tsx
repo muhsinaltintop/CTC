@@ -39,8 +39,10 @@ function formatTwo(value: number): string {
   return value.toFixed(2);
 }
 
-function fillHeightMmToMeters(mm: string): string {
-  return (Number(mm) / 1000).toFixed(2);
+
+function calcTotalFillHeight(fills: string[]): string {
+  const totalMm = fills.reduce((sum, fillMm) => sum + toNumber(fillMm), 0);
+  return (totalMm / 1000).toFixed(2);
 }
 
 export function FillSectionStep({
@@ -51,10 +53,37 @@ export function FillSectionStep({
   onBackToTowerGeometry,
   onChange
 }: FillSectionStepProps) {
+  const fillStack = data.fills ?? [];
+
   const totalHeight =
     toNumber(data.sprayHeight) +
     toNumber(data.fillHeight) +
     toNumber(data.rainHeight);
+
+  const handleAddFill = () => {
+    const updatedFills = [...fillStack, data.availableFillHeight];
+
+    onChange({
+      fills: updatedFills,
+      fillHeight: calcTotalFillHeight(updatedFills)
+    });
+  };
+
+  const handleRemoveFill = (indexToRemove: number) => {
+    const updatedFills = fillStack.filter((_, index) => index !== indexToRemove);
+
+    onChange({
+      fills: updatedFills,
+      fillHeight: calcTotalFillHeight(updatedFills)
+    });
+  };
+
+  const handleRemoveAllFills = () => {
+    onChange({
+      fills: [],
+      fillHeight: '0.00'
+    });
+  };
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -154,10 +183,7 @@ export function FillSectionStep({
                   value={heightOption.value}
                   checked={data.availableFillHeight === heightOption.value}
                   onChange={(event) =>
-                    onChange({
-                      availableFillHeight: event.target.value,
-                      fillHeight: fillHeightMmToMeters(event.target.value)
-                    })
+                    onChange({ availableFillHeight: event.target.value })
                   }
                   disabled={!editable || heightOption.disabled}
                 />
@@ -166,12 +192,17 @@ export function FillSectionStep({
             ))}
 
             <div className="flex items-center gap-4 pt-1">
-              <Button type="button" disabled={!editable}>
+              <Button
+                type="button"
+                onClick={handleAddFill}
+                disabled={!editable}
+              >
                 Add Fill
               </Button>
               <button
                 type="button"
-                disabled={!editable}
+                onClick={handleRemoveAllFills}
+                disabled={!editable || fillStack.length === 0}
                 className="text-sm text-sky-700 underline disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 Remove All Fills
@@ -227,8 +258,33 @@ export function FillSectionStep({
             </div>
 
             <p className="mt-2 text-xs text-slate-500">
-              Fill Height is auto-populated from the selected Available Fill Height.
+              Fill Height is auto-calculated from the fills added to the stack.
             </p>
+
+            <div className="mt-3 space-y-2">
+              {fillStack.length === 0 ? (
+                <p className="text-xs text-slate-500">No fills added yet.</p>
+              ) : (
+                fillStack.map((fillMm, index) => (
+                  <div
+                    key={`fill-${index}-${fillMm}`}
+                    className="flex items-center justify-between rounded border border-slate-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium text-slate-700">
+                      {data.fillType} • {fillMm} mm
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFill(index)}
+                      disabled={!editable}
+                      className="text-xs font-semibold text-rose-600 underline disabled:cursor-not-allowed disabled:text-slate-400"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
 
             <div className="mt-4 rounded border border-sky-400 bg-sky-50 px-4 py-3 text-center text-sky-800">
               <p className="text-sm font-semibold">{data.towerFillLabel}</p>

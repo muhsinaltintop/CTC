@@ -87,6 +87,7 @@ export interface FillSection {
   rainHeight: string;
   inletHeight: string;
   waterLoading: string;
+  fills: string[];
 }
 
 /* ---------------- ROOT ---------------- */
