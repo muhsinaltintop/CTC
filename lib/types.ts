@@ -14,6 +14,15 @@ export type PressureInputMode =
   | 'altitude'
   | 'barometricPressure';
 
+export type CellArrangement = 'inline' | 'backToBack';
+
+export type AirInletConfiguration =
+  | 'bothEndsOpen'
+  | 'bothEndsClosed'
+  | 'leftEndClosed'
+  | 'rightEndClosed'
+  | 'threeSidesClosed';
+
 /* ---------------- PROJECT ---------------- */
 
 export interface ProjectInformation {
@@ -52,7 +61,15 @@ export interface ThermalConditions {
 /* ---------------- GEOMETRY ---------------- */
 
 export interface TowerGeometry {
-  notes: string;
+  noOfCells: string;
+  cellArrangement: CellArrangement;
+  airInletConfiguration: AirInletConfiguration;
+  louverType: string;
+  louverCoeff: string;
+  inletObstruction: string;
+  inletHeight: string;
+  cellWidth: string;
+  cellLength: string;
 }
 
 /* ---------------- ROOT ---------------- */
