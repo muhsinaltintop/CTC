@@ -11,7 +11,6 @@ interface FillSectionStepProps {
   editable: boolean;
   canEdit: boolean;
   onEdit: () => void;
-  onBackToTowerGeometry: () => void;
   onNext: () => void;
   onChange: (value: Partial<FillSection>) => void;
 }
@@ -55,7 +54,6 @@ export function FillSectionStep({
   editable,
   canEdit,
   onEdit,
-  onBackToTowerGeometry,
   onNext,
   onChange
 }: FillSectionStepProps) {
@@ -102,14 +100,6 @@ export function FillSectionStep({
           canEdit={canEdit}
           onEdit={onEdit}
         />
-
-        <button
-          type="button"
-          onClick={onBackToTowerGeometry}
-          className="mb-4 text-sm font-medium text-sky-700 hover:text-sky-900"
-        >
-          Back to Tower Geometry
-        </button>
       </div>
 
       {isOpen ? (

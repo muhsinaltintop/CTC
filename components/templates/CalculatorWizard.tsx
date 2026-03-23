@@ -261,7 +261,6 @@ export function CalculatorWizard() {
             editable={activeStep === 3}
             canEdit={activeStep !== 3}
             onEdit={() => activateStep(3)}
-            onBackToTowerGeometry={() => activateStep(2)}
             onNext={() => activateStep(4)}
             onChange={(value) =>
               setCalculatorData((prev) => ({
