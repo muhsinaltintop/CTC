@@ -72,6 +72,7 @@ export function TowerGeometryStep({
   const inletHeight = toNumber(data.inletHeight) ?? 0;
   const cellWidth = toNumber(data.cellWidth) ?? 0;
   const obstruction = toNumber(data.inletObstruction) ?? 0;
+  const visualInletHeight = Math.max(0, inletHeight);
 
   const totalLengthOfTower = noOfCells * cellLength;
 
@@ -89,6 +90,44 @@ export function TowerGeometryStep({
   const { leftClosed, rightClosed, topClosed } = getInletWallState(
     data.airInletConfiguration
   );
+
+  const sideView = {
+    width: 340,
+    height: 280,
+    margin: 24,
+    chimneyHeight: 28,
+    bodyTop: 64,
+    bodyHeight: 178
+  };
+  const louverHeightRatio = Math.min(1, visualInletHeight / 6);
+  const louverHeight = Math.max(38, 38 + louverHeightRatio * 72);
+  const louverTop =
+    sideView.bodyTop + sideView.bodyHeight - louverHeight - sideView.margin / 2;
+  const towerLeft = sideView.margin + 48;
+  const towerWidth = sideView.width - sideView.margin * 2 - 96;
+  const bodyRight = towerLeft + towerWidth;
+  const topView = {
+    width: 340,
+    height: 240,
+    margin: 34
+  };
+  const widthOneValue = Math.max(0, cellWidth);
+  const widthTwoValue = Math.max(0, cellLength);
+  const widthRatio = widthOneValue > 0 && widthTwoValue > 0
+    ? widthOneValue / widthTwoValue
+    : 1;
+  const topRectMaxWidth = topView.width - topView.margin * 2 - 44;
+  const topRectMaxHeight = topView.height - topView.margin * 2 - 20;
+  const topRectWidth = Math.min(
+    topRectMaxWidth,
+    Math.max(72, widthRatio >= 1 ? topRectMaxWidth : topRectMaxHeight * widthRatio)
+  );
+  const topRectHeight = Math.min(
+    topRectMaxHeight,
+    Math.max(72, widthRatio >= 1 ? topRectMaxWidth / widthRatio : topRectMaxHeight)
+  );
+  const topRectX = (topView.width - topRectWidth) / 2;
+  const topRectY = (topView.height - topRectHeight) / 2 + 10;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -226,12 +265,124 @@ export function TowerGeometryStep({
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-sm font-semibold text-slate-800">Side View</h3>
-              <div className="rounded border border-dashed border-slate-300 bg-white p-3 text-xs font-mono text-slate-700">
-                ┌───────────────┐
-                <br />
-                │&nbsp;&nbsp;Inlet&nbsp;Height&nbsp;&nbsp;│
-                <br />
-                └───────────────┘
+              <div className="rounded border border-dashed border-slate-300 bg-white p-3">
+                <svg
+                  viewBox={`0 0 ${sideView.width} ${sideView.height}`}
+                  role="img"
+                  aria-label="Tower side view with chimney, body, and louver section"
+                  className="h-64 w-full"
+                >
+                  <defs>
+                    <pattern
+                      id="louverPattern"
+                      width="12"
+                      height="10"
+                      patternUnits="userSpaceOnUse"
+                    >
+                      <line
+                        x1="0"
+                        y1="10"
+                        x2="12"
+                        y2="0"
+                        stroke="#0f766e"
+                        strokeWidth="1.6"
+                      />
+                    </pattern>
+                  </defs>
+
+                  <rect
+                    x={towerLeft}
+                    y={sideView.bodyTop}
+                    width={towerWidth}
+                    height={sideView.bodyHeight}
+                    rx="2"
+                    fill="#f8fafc"
+                    stroke="#0f172a"
+                    strokeWidth="2.2"
+                  />
+
+                  <rect
+                    x={towerLeft + towerWidth * 0.33}
+                    y={sideView.bodyTop - sideView.chimneyHeight}
+                    width={towerWidth * 0.34}
+                    height={sideView.chimneyHeight}
+                    fill="#e2e8f0"
+                    stroke="#0f172a"
+                    strokeWidth="2"
+                  />
+
+                  <rect
+                    x={towerLeft + 14}
+                    y={louverTop}
+                    width={towerWidth - 28}
+                    height={louverHeight}
+                    fill="url(#louverPattern)"
+                    stroke="#0f766e"
+                    strokeWidth="2"
+                  />
+
+                  <line
+                    x1={bodyRight + 24}
+                    y1={louverTop}
+                    x2={bodyRight + 24}
+                    y2={louverTop + louverHeight}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={bodyRight + 18}
+                    y1={louverTop}
+                    x2={bodyRight + 30}
+                    y2={louverTop}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={bodyRight + 18}
+                    y1={louverTop + louverHeight}
+                    x2={bodyRight + 30}
+                    y2={louverTop + louverHeight}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <text
+                    x={bodyRight + 36}
+                    y={louverTop + louverHeight / 2 + 4}
+                    fontSize="11"
+                    fill="#334155"
+                  >
+                    Inlet / Louver Height: {formatMeters(visualInletHeight)} m
+                  </text>
+
+                  <text
+                    x={towerLeft + towerWidth / 2}
+                    y={sideView.bodyTop + 18}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#1e293b"
+                  >
+                    Chimney
+                  </text>
+                  <text
+                    x={towerLeft + towerWidth / 2}
+                    y={sideView.bodyTop + sideView.bodyHeight / 2}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fill="#1e293b"
+                  >
+                    Tower Body
+                  </text>
+                  <text
+                    x={towerLeft + towerWidth / 2}
+                    y={louverTop + louverHeight / 2}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fill="#0f172a"
+                    className="font-semibold"
+                  >
+                    Louvers
+                  </text>
+                </svg>
               </div>
               <Input
                 id="inletHeight"
@@ -248,12 +399,91 @@ export function TowerGeometryStep({
 
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-sm font-semibold text-slate-800">Top View</h3>
-              <div className="rounded border border-dashed border-slate-300 bg-white p-3 text-xs font-mono text-slate-700">
-                ┌──────────────────┐
-                <br />
-                │&nbsp;Cell&nbsp;Width&nbsp;×&nbsp;Length&nbsp;│
-                <br />
-                └──────────────────┘
+              <div className="rounded border border-dashed border-slate-300 bg-white p-3">
+                <svg
+                  viewBox={`0 0 ${topView.width} ${topView.height}`}
+                  role="img"
+                  aria-label="Tower top view with width-1 and width-2 dimensions"
+                  className="h-56 w-full"
+                >
+                  <rect
+                    x={topRectX}
+                    y={topRectY}
+                    width={topRectWidth}
+                    height={topRectHeight}
+                    fill="#e0f2fe"
+                    stroke="#0f172a"
+                    strokeWidth="2.2"
+                    rx="2"
+                  />
+
+                  <line
+                    x1={topRectX}
+                    y1={topRectY - 18}
+                    x2={topRectX + topRectWidth}
+                    y2={topRectY - 18}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={topRectX}
+                    y1={topRectY - 24}
+                    x2={topRectX}
+                    y2={topRectY - 12}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={topRectX + topRectWidth}
+                    y1={topRectY - 24}
+                    x2={topRectX + topRectWidth}
+                    y2={topRectY - 12}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <text
+                    x={topRectX + topRectWidth / 2}
+                    y={topRectY - 26}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#334155"
+                  >
+                    Width-1: {formatMeters(widthOneValue)} m
+                  </text>
+
+                  <line
+                    x1={topRectX + topRectWidth + 18}
+                    y1={topRectY}
+                    x2={topRectX + topRectWidth + 18}
+                    y2={topRectY + topRectHeight}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={topRectX + topRectWidth + 12}
+                    y1={topRectY}
+                    x2={topRectX + topRectWidth + 24}
+                    y2={topRectY}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <line
+                    x1={topRectX + topRectWidth + 12}
+                    y1={topRectY + topRectHeight}
+                    x2={topRectX + topRectWidth + 24}
+                    y2={topRectY + topRectHeight}
+                    stroke="#334155"
+                    strokeWidth="1.8"
+                  />
+                  <text
+                    x={topRectX + topRectWidth + 26}
+                    y={topRectY + topRectHeight / 2 + 4}
+                    fontSize="11"
+                    fill="#334155"
+                  >
+                    Width-2: {formatMeters(widthTwoValue)} m
+                  </text>
+                </svg>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -261,7 +491,7 @@ export function TowerGeometryStep({
                   id="cellWidth"
                   type="number"
                   step="0.01"
-                  label="Cell Width (m)"
+                  label="Width-1 (m)"
                   value={data.cellWidth}
                   onChange={(event) =>
                     onChange({ cellWidth: event.target.value })
@@ -273,7 +503,7 @@ export function TowerGeometryStep({
                   id="cellLength"
                   type="number"
                   step="0.01"
-                  label="Cell Length (m)"
+                  label="Width-2 (m)"
                   value={data.cellLength}
                   onChange={(event) =>
                     onChange({ cellLength: event.target.value })
