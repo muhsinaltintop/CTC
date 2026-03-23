@@ -286,10 +286,6 @@ export function FillSectionStep({
               )}
             </div>
 
-            <div className="mt-4 rounded border border-sky-400 bg-sky-50 px-4 py-3 text-center text-sky-800">
-              <p className="text-sm font-semibold">{data.towerFillLabel}</p>
-              <p className="text-xs">{Math.round(toNumber(data.fillHeight) * 1000)}mm</p>
-            </div>
           </div>
 
           <p className="text-sm font-medium text-slate-700">

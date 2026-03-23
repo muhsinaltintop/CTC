@@ -81,7 +81,6 @@ export interface FillSection {
   nozzleType: string;
   fillType: string;
   availableFillHeight: string;
-  towerFillLabel: string;
   sprayHeight: string;
   fillHeight: string;
   rainHeight: string;
