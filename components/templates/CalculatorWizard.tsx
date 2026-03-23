@@ -100,24 +100,8 @@ export function CalculatorWizard() {
   );
 
   /* ---------------- VALIDATION ---------------- */
-
-  const canContinueFromThermal = useMemo(() => {
-    const t = calculatorData.thermalConditions;
-
-    const pressureProvided =
-      t.pressureInputMode === 'altitude'
-        ? t.altitude.trim().length > 0
-        : t.barometricPressure.trim().length > 0;
-
-    const isSet = (v: string) => v.trim().length > 0;
-
-    return (
-      isSet(t.wetBulb) &&
-      isSet(t.relativeHumidity) &&
-      isSet(t.range) &&
-      pressureProvided
-    );
-  }, [calculatorData]);
+  // TODO: Re-enable thermal prerequisite checks after development is completed.
+  // const canContinueFromThermal = useMemo(() => { ... }, [calculatorData]);
 
   /* ---------------- HANDLERS ---------------- */
 
@@ -188,7 +172,7 @@ export function CalculatorWizard() {
             data={calculatorData.thermalConditions}
             editable={activeStep === 1}
             canEdit={highestUnlockedStep >= 1 && activeStep !== 1}
-            canContinue={canContinueFromThermal}
+            canContinue
             onChange={handleThermalChange}
             onCalculate={() => {}}
             onNext={() => {
