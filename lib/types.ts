@@ -74,8 +74,26 @@ export interface TowerGeometry {
 
 /* ---------------- ROOT ---------------- */
 
+export interface FillSection {
+  kaVLDerate: string;
+  dpDerate: string;
+  fillObstruction: string;
+  nozzleType: string;
+  fillType: string;
+  availableFillHeight: string;
+  towerFillLabel: string;
+  sprayHeight: string;
+  fillHeight: string;
+  rainHeight: string;
+  inletHeight: string;
+  waterLoading: string;
+}
+
+/* ---------------- ROOT ---------------- */
+
 export interface CalculatorData {
   projectInformation: ProjectInformation;
   thermalConditions: ThermalConditions;
   towerGeometry: TowerGeometry;
+  fillSection: FillSection;
 }

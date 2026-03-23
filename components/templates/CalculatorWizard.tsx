@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ProjectInformationStep } from '@/components/organisms/ProjectInformationStep';
 import { ThermalConditionsStep } from '@/components/organisms/ThermalConditionsStep';
 import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
+import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
 
@@ -34,9 +35,9 @@ function calculateThermalFields(
 }
 
 export function CalculatorWizard() {
-  const [activeStep, setActiveStep] = useState<0 | 1 | 2>(0);
+  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
   const [highestUnlockedStep, setHighestUnlockedStep] =
-    useState<0 | 1 | 2>(0);
+    useState<0 | 1 | 2 | 3>(0);
 
   const [calculatorData, setCalculatorData] =
     useState<CalculatorData>(initialCalculatorData);
@@ -94,7 +95,18 @@ export function CalculatorWizard() {
       ],
       ['Inlet Height (m)', calculatorData.towerGeometry.inletHeight || '-'],
       ['Cell Width (m)', calculatorData.towerGeometry.cellWidth || '-'],
-      ['Cell Length (m)', calculatorData.towerGeometry.cellLength || '-']
+      ['Cell Length (m)', calculatorData.towerGeometry.cellLength || '-'],
+
+      ['KaV/L Derate (%)', calculatorData.fillSection.kaVLDerate || '-'],
+      ['dP Derate (%)', calculatorData.fillSection.dpDerate || '-'],
+      ['Fill Obstruction (%)', calculatorData.fillSection.fillObstruction || '-'],
+      ['Nozzle Type', calculatorData.fillSection.nozzleType || '-'],
+      ['Fill Type', calculatorData.fillSection.fillType || '-'],
+      ['Spray Height (m)', calculatorData.fillSection.sprayHeight || '-'],
+      ['Fill Height (m)', calculatorData.fillSection.fillHeight || '-'],
+      ['Rain Height (m)', calculatorData.fillSection.rainHeight || '-'],
+      ['Inlet Height (m) - Fill', calculatorData.fillSection.inletHeight || '-'],
+      ['Water Loading (m3/hr-m2)', calculatorData.fillSection.waterLoading || '-']
     ],
     [calculatorData]
   );
@@ -197,6 +209,29 @@ export function CalculatorWizard() {
                 ...prev,
                 towerGeometry: {
                   ...prev.towerGeometry,
+                  ...value
+                }
+              }))
+            }
+            onNext={() => {
+              setHighestUnlockedStep(3);
+              setActiveStep(3);
+            }}
+          />
+
+          <FillSectionStep
+            data={calculatorData.fillSection}
+            editable={activeStep === 3}
+            canEdit={highestUnlockedStep >= 3 && activeStep !== 3}
+            onEdit={() => {
+              if (highestUnlockedStep >= 3) setActiveStep(3);
+            }}
+            onBackToTowerGeometry={() => setActiveStep(2)}
+            onChange={(value) =>
+              setCalculatorData((prev) => ({
+                ...prev,
+                fillSection: {
+                  ...prev.fillSection,
                   ...value
                 }
               }))

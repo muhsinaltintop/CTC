@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { Select } from '@/components/atoms/Select';
 import { StepHeader } from '@/components/molecules/StepHeader';
@@ -13,6 +14,7 @@ interface TowerGeometryStepProps {
   canEdit: boolean;
   onEdit: () => void;
   onChange: (value: Partial<TowerGeometry>) => void;
+  onNext: () => void;
 }
 
 const numberOfCellsOptions = Array.from({ length: 30 }, (_, index) => {
@@ -65,7 +67,8 @@ export function TowerGeometryStep({
   editable,
   canEdit,
   onEdit,
-  onChange
+  onChange,
+  onNext
 }: TowerGeometryStepProps) {
   const noOfCells = toNumber(data.noOfCells) ?? 0;
   const cellLength = toNumber(data.cellLength) ?? 0;
@@ -522,6 +525,12 @@ export function TowerGeometryStep({
           </p>
         </fieldset>
       </div>
+
+      {editable && (
+        <div className="mt-5 flex justify-end">
+          <Button onClick={onNext}>Next: Fill Section</Button>
+        </div>
+      )}
     </section>
   );
 }

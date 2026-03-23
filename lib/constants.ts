@@ -42,5 +42,20 @@ export const initialCalculatorData: CalculatorData = {
     inletHeight: '',
     cellWidth: '',
     cellLength: '16'
+  },
+
+  fillSection: {
+    kaVLDerate: '1.0',
+    dpDerate: '1.0',
+    fillObstruction: '2.0',
+    nozzleType: 'DekSpray Nozzle',
+    fillType: 'CF1200',
+    availableFillHeight: '300',
+    towerFillLabel: 'CF1900',
+    sprayHeight: '0.40',
+    fillHeight: '1.22',
+    rainHeight: '2.50',
+    inletHeight: '2.50',
+    waterLoading: '15.94'
   }
 };
