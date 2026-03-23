@@ -53,7 +53,7 @@ export const initialCalculatorData: CalculatorData = {
     availableFillHeight: '300',
     towerFillLabel: 'CF1900',
     sprayHeight: '0.40',
-    fillHeight: '1.22',
+    fillHeight: '0.30',
     rainHeight: '2.50',
     inletHeight: '2.50',
     waterLoading: '15.94'

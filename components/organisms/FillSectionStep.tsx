@@ -22,7 +22,12 @@ const fillTypeOptions = [
 ];
 
 const availableFillHeights = [
-  { value: '300', label: '300 mm' }
+  { value: '300', label: '300 mm', disabled: false },
+  { value: '600', label: '600 mm', disabled: true },
+  { value: '900', label: '900 mm', disabled: true },
+  { value: '1200', label: '1200 mm', disabled: true },
+  { value: '1500', label: '1500 mm', disabled: true },
+  { value: '1800', label: '1800 mm', disabled: true }
 ];
 
 function toNumber(value: string): number {
@@ -32,6 +37,10 @@ function toNumber(value: string): number {
 
 function formatTwo(value: number): string {
   return value.toFixed(2);
+}
+
+function fillHeightMmToMeters(mm: string): string {
+  return (Number(mm) / 1000).toFixed(2);
 }
 
 export function FillSectionStep({
@@ -134,7 +143,10 @@ export function FillSectionStep({
             {availableFillHeights.map((heightOption) => (
               <label
                 key={heightOption.value}
-                className="flex items-center gap-2 text-sm text-slate-700"
+                className={[
+                  'flex items-center gap-2 text-sm',
+                  heightOption.disabled ? 'text-slate-400' : 'text-slate-700'
+                ].join(' ')}
               >
                 <input
                   type="radio"
@@ -142,9 +154,12 @@ export function FillSectionStep({
                   value={heightOption.value}
                   checked={data.availableFillHeight === heightOption.value}
                   onChange={(event) =>
-                    onChange({ availableFillHeight: event.target.value })
+                    onChange({
+                      availableFillHeight: event.target.value,
+                      fillHeight: fillHeightMmToMeters(event.target.value)
+                    })
                   }
-                  disabled={!editable}
+                  disabled={!editable || heightOption.disabled}
                 />
                 {heightOption.label}
               </label>
@@ -186,8 +201,8 @@ export function FillSectionStep({
                 step="0.01"
                 label="Fill Height (m)"
                 value={data.fillHeight}
-                onChange={(event) => onChange({ fillHeight: event.target.value })}
-                disabled={!editable}
+                readOnly
+                disabled
               />
 
               <Input
@@ -210,6 +225,10 @@ export function FillSectionStep({
                 disabled={!editable}
               />
             </div>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Fill Height is auto-populated from the selected Available Fill Height.
+            </p>
 
             <div className="mt-4 rounded border border-sky-400 bg-sky-50 px-4 py-3 text-center text-sky-800">
               <p className="text-sm font-semibold">{data.towerFillLabel}</p>
