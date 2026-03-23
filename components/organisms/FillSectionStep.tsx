@@ -6,6 +6,8 @@ import { FillSection } from '@/lib/types';
 
 interface FillSectionStepProps {
   data: FillSection;
+  isOpen: boolean;
+  onToggle: () => void;
   editable: boolean;
   canEdit: boolean;
   onEdit: () => void;
@@ -47,6 +49,8 @@ function calcTotalFillHeight(fills: string[]): string {
 
 export function FillSectionStep({
   data,
+  isOpen,
+  onToggle,
   editable,
   canEdit,
   onEdit,
@@ -91,6 +95,8 @@ export function FillSectionStep({
         <StepHeader
           title="Fill Section"
           description="Please complete the information below:"
+          isOpen={isOpen}
+          onToggle={onToggle}
           canEdit={canEdit}
           onEdit={onEdit}
         />
@@ -104,7 +110,9 @@ export function FillSectionStep({
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+      {isOpen ? (
+        <>
+          <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
         <div className="space-y-4">
           <fieldset className="space-y-3 rounded-lg border border-slate-200 p-4">
             <legend className="px-1 text-sm font-semibold text-slate-800">
@@ -305,14 +313,16 @@ export function FillSectionStep({
             disabled={!editable}
           />
         </div>
-      </div>
+          </div>
 
-      {editable && (
-        <div className="mt-5 flex justify-end gap-3">
-          <Button>Continue</Button>
-          <Button variant="secondary">Close</Button>
-        </div>
-      )}
+          {editable && (
+            <div className="mt-5 flex justify-end gap-3">
+              <Button>Continue</Button>
+              <Button variant="secondary">Close</Button>
+            </div>
+          )}
+        </>
+      ) : null}
     </section>
   );
 }

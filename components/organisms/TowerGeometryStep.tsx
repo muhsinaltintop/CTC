@@ -10,6 +10,8 @@ import {
 
 interface TowerGeometryStepProps {
   data: TowerGeometry;
+  isOpen: boolean;
+  onToggle: () => void;
   editable: boolean;
   canEdit: boolean;
   onEdit: () => void;
@@ -64,6 +66,8 @@ function getInletWallState(configuration: AirInletConfiguration) {
 
 export function TowerGeometryStep({
   data,
+  isOpen,
+  onToggle,
   editable,
   canEdit,
   onEdit,
@@ -137,11 +141,15 @@ export function TowerGeometryStep({
       <StepHeader
         title="Tower Geometry"
         description="Please complete the information below:"
+        isOpen={isOpen}
+        onToggle={onToggle}
         canEdit={canEdit}
         onEdit={onEdit}
       />
 
-      <div className="space-y-6">
+      {isOpen ? (
+        <>
+          <div className="space-y-6">
         <fieldset className="space-y-4">
           <legend className="text-sm font-semibold text-slate-800">
             Tower Layout
@@ -524,13 +532,15 @@ export function TowerGeometryStep({
             </span>
           </p>
         </fieldset>
-      </div>
+          </div>
 
-      {editable && (
-        <div className="mt-5 flex justify-end">
-          <Button onClick={onNext}>Next: Fill Section</Button>
-        </div>
-      )}
+          {editable && (
+            <div className="mt-5 flex justify-end">
+              <Button onClick={onNext}>Next: Fill Section</Button>
+            </div>
+          )}
+        </>
+      ) : null}
     </section>
   );
 }

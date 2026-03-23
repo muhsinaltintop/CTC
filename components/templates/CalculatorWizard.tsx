@@ -36,8 +36,12 @@ function calculateThermalFields(
 
 export function CalculatorWizard() {
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
-  const [highestUnlockedStep, setHighestUnlockedStep] =
-    useState<0 | 1 | 2 | 3>(0);
+  const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3, boolean>>({
+    0: true,
+    1: false,
+    2: false,
+    3: false
+  });
 
   const [calculatorData, setCalculatorData] =
     useState<CalculatorData>(initialCalculatorData);
@@ -142,6 +146,21 @@ export function CalculatorWizard() {
     });
   };
 
+  const activateStep = (step: 0 | 1 | 2 | 3) => {
+    setActiveStep(step);
+    setOpenSteps((prev) => ({
+      ...prev,
+      [step]: true
+    }));
+  };
+
+  const toggleStepOpen = (step: 0 | 1 | 2 | 3) => {
+    setOpenSteps((prev) => ({
+      ...prev,
+      [step]: !prev[step]
+    }));
+  };
+
   /* ---------------- UI ---------------- */
 
   return (
@@ -162,6 +181,8 @@ export function CalculatorWizard() {
           {/* STEP 1 */}
           <ProjectInformationStep
             data={calculatorData.projectInformation}
+            isOpen={openSteps[0]}
+            onToggle={() => toggleStepOpen(0)}
             editable={activeStep === 0}
             onChange={(value) =>
               setCalculatorData((prev) => ({
@@ -173,37 +194,35 @@ export function CalculatorWizard() {
               }))
             }
             onNext={() => {
-              setHighestUnlockedStep(1);
-              setActiveStep(1);
+              activateStep(1);
             }}
-            onEdit={() => setActiveStep(0)}
+            onEdit={() => activateStep(0)}
           />
 
           {/* STEP 2 */}
           <ThermalConditionsStep
             data={calculatorData.thermalConditions}
+            isOpen={openSteps[1]}
+            onToggle={() => toggleStepOpen(1)}
             editable={activeStep === 1}
-            canEdit={highestUnlockedStep >= 1 && activeStep !== 1}
+            canEdit={activeStep !== 1}
             canContinue
             onChange={handleThermalChange}
             onCalculate={() => {}}
             onNext={() => {
-              setHighestUnlockedStep(2);
-              setActiveStep(2);
+              activateStep(2);
             }}
-            onEdit={() => {
-              if (highestUnlockedStep >= 1) setActiveStep(1);
-            }}
+            onEdit={() => activateStep(1)}
           />
 
           {/* STEP 3 */}
           <TowerGeometryStep
             data={calculatorData.towerGeometry}
+            isOpen={openSteps[2]}
+            onToggle={() => toggleStepOpen(2)}
             editable={activeStep === 2}
-            canEdit={highestUnlockedStep >= 2 && activeStep !== 2}
-            onEdit={() => {
-              if (highestUnlockedStep >= 2) setActiveStep(2);
-            }}
+            canEdit={activeStep !== 2}
+            onEdit={() => activateStep(2)}
             onChange={(value) =>
               setCalculatorData((prev) => ({
                 ...prev,
@@ -214,19 +233,18 @@ export function CalculatorWizard() {
               }))
             }
             onNext={() => {
-              setHighestUnlockedStep(3);
-              setActiveStep(3);
+              activateStep(3);
             }}
           />
 
           <FillSectionStep
             data={calculatorData.fillSection}
+            isOpen={openSteps[3]}
+            onToggle={() => toggleStepOpen(3)}
             editable={activeStep === 3}
-            canEdit={highestUnlockedStep >= 3 && activeStep !== 3}
-            onEdit={() => {
-              if (highestUnlockedStep >= 3) setActiveStep(3);
-            }}
-            onBackToTowerGeometry={() => setActiveStep(2)}
+            canEdit={activeStep !== 3}
+            onEdit={() => activateStep(3)}
+            onBackToTowerGeometry={() => activateStep(2)}
             onChange={(value) =>
               setCalculatorData((prev) => ({
                 ...prev,
