@@ -5,6 +5,8 @@ import { PressureInputMode, SolveFor, ThermalConditions } from '@/lib/types';
 
 interface ThermalConditionsStepProps {
   data: ThermalConditions;
+  isOpen: boolean;
+  onToggle: () => void;
   editable: boolean;
   canEdit: boolean;
   canContinue: boolean;
@@ -28,6 +30,8 @@ const pressureOptions: { value: PressureInputMode; label: string }[] = [
 
 export function ThermalConditionsStep({
   data,
+  isOpen,
+  onToggle,
   editable,
   canEdit,
   canContinue,
@@ -57,11 +61,15 @@ export function ThermalConditionsStep({
       <StepHeader
         title="Thermal Conditions"
         description="Please complete the information below:"
+        isOpen={isOpen}
+        onToggle={onToggle}
         canEdit={canEdit}
         onEdit={onEdit}
       />
 
-      <div className="space-y-5">
+      {isOpen ? (
+        <>
+          <div className="space-y-5">
         {/* Solve For */}
         <fieldset className="space-y-2">
           <legend className="text-sm font-semibold text-slate-800">
@@ -210,19 +218,21 @@ export function ThermalConditionsStep({
             />
           </div>
         </fieldset>
-      </div>
+          </div>
 
-      {editable && (
-        <div className="mt-5 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onCalculate}>
-            Calculate
-          </Button>
+          {editable && (
+            <div className="mt-5 flex justify-end gap-3">
+              <Button variant="secondary" onClick={onCalculate}>
+                Calculate
+              </Button>
 
-          <Button onClick={onNext} disabled={!canContinue}>
-            Next: Tower Geometry
-          </Button>
-        </div>
-      )}
+              <Button onClick={onNext} disabled={!canContinue}>
+                Next: Tower Geometry
+              </Button>
+            </div>
+          )}
+        </>
+      ) : null}
     </section>
   );
 }
