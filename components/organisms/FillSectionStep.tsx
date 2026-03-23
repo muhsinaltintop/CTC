@@ -89,7 +89,7 @@ export function FillSectionStep({
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-4">
         <StepHeader
-          title="Step 3: Fill Section"
+          title="Fill Section"
           description="Please complete the information below:"
           canEdit={canEdit}
           onEdit={onEdit}
