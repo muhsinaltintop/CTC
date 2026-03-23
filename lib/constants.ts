@@ -57,5 +57,22 @@ export const initialCalculatorData: CalculatorData = {
     inletHeight: '2.50',
     waterLoading: '15.94',
     fills: []
+  },
+
+  plenumFan: {
+    fanDiameter: '4.88',
+    sealDiskHubDiameter: '0.80',
+    fanTipClearance: '24.00',
+    fanStackRegain: false,
+    totalFanEfficiency: '85.0',
+    transmissionEfficiency: '98.0',
+    fanInletLossCoefficient: '0.20',
+    driftObstruction: '2.0',
+    driftEliminators: 'CF80MAx',
+    fanStackHeight: '1.80',
+    fanDeckHeight: '6.60',
+    plenumHoleDiameter: '5.61',
+    plenumHeight: '1.98',
+    sprayToTopOfDrift: '0.50'
   }
 };

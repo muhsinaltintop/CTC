@@ -12,6 +12,7 @@ interface FillSectionStepProps {
   canEdit: boolean;
   onEdit: () => void;
   onBackToTowerGeometry: () => void;
+  onNext: () => void;
   onChange: (value: Partial<FillSection>) => void;
 }
 
@@ -55,6 +56,7 @@ export function FillSectionStep({
   canEdit,
   onEdit,
   onBackToTowerGeometry,
+  onNext,
   onChange
 }: FillSectionStepProps) {
   const fillStack = data.fills ?? [];
@@ -317,7 +319,7 @@ export function FillSectionStep({
 
           {editable && (
             <div className="mt-5 flex justify-end gap-3">
-              <Button>Continue</Button>
+              <Button onClick={onNext}>Continue</Button>
               <Button variant="secondary">Close</Button>
             </div>
           )}

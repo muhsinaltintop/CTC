@@ -5,6 +5,7 @@ import { ProjectInformationStep } from '@/components/organisms/ProjectInformatio
 import { ThermalConditionsStep } from '@/components/organisms/ThermalConditionsStep';
 import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
 import { FillSectionStep } from '@/components/organisms/FillSectionStep';
+import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
 
@@ -35,12 +36,13 @@ function calculateThermalFields(
 }
 
 export function CalculatorWizard() {
-  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
-  const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3, boolean>>({
+  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3 | 4, boolean>>({
     0: true,
     1: false,
     2: false,
-    3: false
+    3: false,
+    4: false
   });
 
   const [calculatorData, setCalculatorData] =
@@ -110,7 +112,22 @@ export function CalculatorWizard() {
       ['Fill Height (m)', calculatorData.fillSection.fillHeight || '-'],
       ['Rain Height (m)', calculatorData.fillSection.rainHeight || '-'],
       ['Inlet Height (m) - Fill', calculatorData.fillSection.inletHeight || '-'],
-      ['Water Loading (m3/hr-m2)', calculatorData.fillSection.waterLoading || '-']
+      ['Water Loading (m3/hr-m2)', calculatorData.fillSection.waterLoading || '-'],
+
+      ['Fan Diameter (m)', calculatorData.plenumFan.fanDiameter || '-'],
+      ['Seal Disk/Hub Diameter (m)', calculatorData.plenumFan.sealDiskHubDiameter || '-'],
+      ['Fan Tip Clearance (mm)', calculatorData.plenumFan.fanTipClearance || '-'],
+      ['Fan Stack Regain', calculatorData.plenumFan.fanStackRegain ? 'Yes' : 'No'],
+      ['Total Fan Efficiency (%)', calculatorData.plenumFan.totalFanEfficiency || '-'],
+      ['Transmission Efficiency (%)', calculatorData.plenumFan.transmissionEfficiency || '-'],
+      ['Fan Inlet Loss Coefficient', calculatorData.plenumFan.fanInletLossCoefficient || '-'],
+      ['Drift Obstruction (%)', calculatorData.plenumFan.driftObstruction || '-'],
+      ['Drift Eliminators', calculatorData.plenumFan.driftEliminators || '-'],
+      ['Fan Stack Height (m)', calculatorData.plenumFan.fanStackHeight || '-'],
+      ['Fan Deck Height (m)', calculatorData.plenumFan.fanDeckHeight || '-'],
+      ['Plenum Hole Diameter (m)', calculatorData.plenumFan.plenumHoleDiameter || '-'],
+      ['Plenum Height (m)', calculatorData.plenumFan.plenumHeight || '-'],
+      ['Spray to Top of Drift (m)', calculatorData.plenumFan.sprayToTopOfDrift || '-']
     ],
     [calculatorData]
   );
@@ -146,7 +163,7 @@ export function CalculatorWizard() {
     });
   };
 
-  const activateStep = (step: 0 | 1 | 2 | 3) => {
+  const activateStep = (step: 0 | 1 | 2 | 3 | 4) => {
     setActiveStep(step);
     setOpenSteps((prev) => ({
       ...prev,
@@ -154,7 +171,7 @@ export function CalculatorWizard() {
     }));
   };
 
-  const toggleStepOpen = (step: 0 | 1 | 2 | 3) => {
+  const toggleStepOpen = (step: 0 | 1 | 2 | 3 | 4) => {
     setOpenSteps((prev) => ({
       ...prev,
       [step]: !prev[step]
@@ -245,11 +262,31 @@ export function CalculatorWizard() {
             canEdit={activeStep !== 3}
             onEdit={() => activateStep(3)}
             onBackToTowerGeometry={() => activateStep(2)}
+            onNext={() => activateStep(4)}
             onChange={(value) =>
               setCalculatorData((prev) => ({
                 ...prev,
                 fillSection: {
                   ...prev.fillSection,
+                  ...value
+                }
+              }))
+            }
+          />
+
+          <PlenumFanStep
+            data={calculatorData.plenumFan}
+            isOpen={openSteps[4]}
+            onToggle={() => toggleStepOpen(4)}
+            editable={activeStep === 4}
+            canEdit={activeStep !== 4}
+            onEdit={() => activateStep(4)}
+            onBackToFillSection={() => activateStep(3)}
+            onChange={(value) =>
+              setCalculatorData((prev) => ({
+                ...prev,
+                plenumFan: {
+                  ...prev.plenumFan,
                   ...value
                 }
               }))
