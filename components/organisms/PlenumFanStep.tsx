@@ -11,7 +11,6 @@ interface PlenumFanStepProps {
   canEdit: boolean;
   onToggle: () => void;
   onEdit: () => void;
-  onBackToFillSection: () => void;
   onChange: (value: Partial<PlenumFan>) => void;
 }
 
@@ -25,29 +24,18 @@ export function PlenumFanStep({
   canEdit,
   onToggle,
   onEdit,
-  onBackToFillSection,
   onChange
 }: PlenumFanStepProps) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <StepHeader
-          title="Plenum & Fan"
-          description="Please complete the information below:"
-          isOpen={isOpen}
-          onToggle={onToggle}
-          canEdit={canEdit}
-          onEdit={onEdit}
-        />
-
-        <button
-          type="button"
-          onClick={onBackToFillSection}
-          className="mb-4 text-sm font-medium text-sky-700 hover:text-sky-900"
-        >
-          Back to Fill Section
-        </button>
-      </div>
+      <StepHeader
+        title="Plenum & Fan"
+        description="Please complete the information below:"
+        isOpen={isOpen}
+        onToggle={onToggle}
+        canEdit={canEdit}
+        onEdit={onEdit}
+      />
 
       {isOpen ? (
         <>

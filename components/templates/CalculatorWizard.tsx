@@ -280,7 +280,6 @@ export function CalculatorWizard() {
             editable={activeStep === 4}
             canEdit={activeStep !== 4}
             onEdit={() => activateStep(4)}
-            onBackToFillSection={() => activateStep(3)}
             onChange={(value) =>
               setCalculatorData((prev) => ({
                 ...prev,
