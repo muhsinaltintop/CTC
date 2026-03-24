@@ -6,6 +6,7 @@ import { ThermalConditionsStep } from '@/components/organisms/ThermalConditionsS
 import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
 import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
+import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
 
@@ -36,13 +37,14 @@ function calculateThermalFields(
 }
 
 export function CalculatorWizard() {
-  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4>(0);
-  const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3 | 4, boolean>>({
+  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3 | 4 | 5, boolean>>({
     0: true,
     1: false,
     2: false,
     3: false,
-    4: false
+    4: false,
+    5: false
   });
 
   const [calculatorData, setCalculatorData] =
@@ -163,7 +165,7 @@ export function CalculatorWizard() {
     });
   };
 
-  const activateStep = (step: 0 | 1 | 2 | 3 | 4) => {
+  const activateStep = (step: 0 | 1 | 2 | 3 | 4 | 5) => {
     setActiveStep(step);
     setOpenSteps((prev) => ({
       ...prev,
@@ -171,7 +173,7 @@ export function CalculatorWizard() {
     }));
   };
 
-  const toggleStepOpen = (step: 0 | 1 | 2 | 3 | 4) => {
+  const toggleStepOpen = (step: 0 | 1 | 2 | 3 | 4 | 5) => {
     setOpenSteps((prev) => ({
       ...prev,
       [step]: !prev[step]
@@ -289,7 +291,10 @@ export function CalculatorWizard() {
                 }
               }))
             }
+            onNext={() => activateStep(5)}
           />
+
+          {activeStep === 5 ? <ReviewRunCalculationsStep /> : null}
         </div>
 
         {/* RIGHT — SUMMARY */}

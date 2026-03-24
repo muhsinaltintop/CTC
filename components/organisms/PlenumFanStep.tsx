@@ -12,6 +12,7 @@ interface PlenumFanStepProps {
   onToggle: () => void;
   onEdit: () => void;
   onChange: (value: Partial<PlenumFan>) => void;
+  onNext: () => void;
 }
 
 // Keeping option list local for now; future eliminator catalog can be wired here.
@@ -24,7 +25,8 @@ export function PlenumFanStep({
   canEdit,
   onToggle,
   onEdit,
-  onChange
+  onChange,
+  onNext
 }: PlenumFanStepProps) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -198,8 +200,13 @@ export function PlenumFanStep({
 
           {editable ? (
             <div className="mt-5 flex justify-end gap-3">
-              <Button>Continue</Button>
-              <Button variant="secondary">Close</Button>
+              <Button onClick={onNext}>Continue</Button>
+              <Button
+                variant="secondary"
+                onClick={onToggle}
+              >
+                Close
+              </Button>
             </div>
           ) : null}
         </>
