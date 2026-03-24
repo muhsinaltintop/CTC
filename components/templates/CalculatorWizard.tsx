@@ -7,6 +7,8 @@ import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
 import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
+import { ThermalResultsScreen } from '@/components/organisms/ThermalResultsScreen';
+import { calculateThermalResults } from '@/lib/calculations';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
 
@@ -49,6 +51,7 @@ export function CalculatorWizard() {
 
   const [calculatorData, setCalculatorData] =
     useState<CalculatorData>(initialCalculatorData);
+  const [hasRunCalculations, setHasRunCalculations] = useState(false);
 
   /* ---------------- SUMMARY ---------------- */
 
@@ -180,6 +183,11 @@ export function CalculatorWizard() {
     }));
   };
 
+  const thermalResults = useMemo(
+    () => calculateThermalResults(calculatorData),
+    [calculatorData]
+  );
+
   /* ---------------- UI ---------------- */
 
   return (
@@ -294,7 +302,18 @@ export function CalculatorWizard() {
             onNext={() => activateStep(5)}
           />
 
-          {activeStep === 5 ? <ReviewRunCalculationsStep /> : null}
+          {activeStep === 5 ? (
+            hasRunCalculations ? (
+              <ThermalResultsScreen
+                results={thermalResults}
+                onBack={() => setHasRunCalculations(false)}
+              />
+            ) : (
+              <ReviewRunCalculationsStep
+                onRunCalculations={() => setHasRunCalculations(true)}
+              />
+            )
+          ) : null}
         </div>
 
         {/* RIGHT — SUMMARY */}
