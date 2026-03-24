@@ -89,6 +89,25 @@ export interface FillSection {
   fills: string[];
 }
 
+/* ---------------- PLENUM & FAN ---------------- */
+
+export interface PlenumFan {
+  fanDiameter: string;
+  sealDiskHubDiameter: string;
+  fanTipClearance: string;
+  fanStackRegain: boolean;
+  totalFanEfficiency: string;
+  transmissionEfficiency: string;
+  fanInletLossCoefficient: string;
+  driftObstruction: string;
+  driftEliminators: string;
+  fanStackHeight: string;
+  fanDeckHeight: string;
+  plenumHoleDiameter: string;
+  plenumHeight: string;
+  sprayToTopOfDrift: string;
+}
+
 /* ---------------- ROOT ---------------- */
 
 export interface CalculatorData {
@@ -96,4 +115,5 @@ export interface CalculatorData {
   thermalConditions: ThermalConditions;
   towerGeometry: TowerGeometry;
   fillSection: FillSection;
+  plenumFan: PlenumFan;
 }
