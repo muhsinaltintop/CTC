@@ -91,16 +91,14 @@ export function FillSectionStep({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <StepHeader
-          title="Fill Section"
-          description="Please complete the information below:"
-          isOpen={isOpen}
-          onToggle={onToggle}
-          canEdit={canEdit}
-          onEdit={onEdit}
-        />
-      </div>
+      <StepHeader
+        title="Fill Section"
+        description="Please complete the information below:"
+        isOpen={isOpen}
+        onToggle={onToggle}
+        canEdit={canEdit}
+        onEdit={onEdit}
+      />
 
       {isOpen ? (
         <>
