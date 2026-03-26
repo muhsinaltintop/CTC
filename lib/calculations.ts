@@ -71,6 +71,35 @@ export interface DeterministicPowerSolverOutput {
   };
 }
 
+
+interface WaterLoadingLimits {
+  min: number;
+  max: number;
+}
+
+const FILL_LOADING_LIMITS: Record<string, WaterLoadingLimits> = {
+  CF1200MABT: { min: 13.4, max: 32.0 },
+  CF1900SB: { min: 7.3, max: 29.3 },
+  OF21MA: { min: 7.3, max: 29.3 },
+  CFS3000: { min: 7.3, max: 29.3 },
+  VF19PLUS: { min: 7.3, max: 29.3 },
+  VF3800: { min: 7.3, max: 29.3 },
+  HTP25: { min: 7.3, max: 29.3 },
+  CF1200: { min: 13.4, max: 32.0 },
+  'CF1900SB/MA': { min: 7.3, max: 29.3 }
+};
+
+function getFillLimits(fillType: string): WaterLoadingLimits {
+  const normalized = fillType.toUpperCase();
+
+  for (const [key, value] of Object.entries(FILL_LOADING_LIMITS)) {
+    if (normalized.includes(key)) {
+      return value;
+    }
+  }
+
+  return { min: 7.3, max: 29.3 };
+}
 export interface CoolingTowerPerformanceResults {
   thermalResults: {
     power: number;
@@ -159,8 +188,10 @@ export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingT
   const wetBulb = toNumber(data.thermalConditions.wetBulb, 25);
   const rh = toNumber(data.thermalConditions.relativeHumidity, 40);
 
-  const totalWaterFlow = Math.max(toNumber(data.thermalConditions.totalWaterFlow, 2000), 0.1);
-  const waterFlowPerCell = totalWaterFlow / cells;
+  const enteredTotalFlow = toNumber(data.thermalConditions.totalWaterFlow, Number.NaN);
+  const totalWaterFlow = Number.isFinite(enteredTotalFlow) && enteredTotalFlow > 0
+    ? enteredTotalFlow
+    : Number.NaN;
 
   const cellWidth = Math.max(toNumber(data.towerGeometry.cellWidth, 8), 0.1);
   const cellLength = Math.max(toNumber(data.towerGeometry.cellLength, 8), 0.1);
@@ -169,7 +200,20 @@ export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingT
   const fillObstruction = clamp(toNumber(data.fillSection.fillObstruction, 2), 0, 95) / 100;
   const grossCellArea = cellWidth * cellLength;
   const fillArea = grossCellArea * (1 - fillObstruction);
+
+  const enteredLoading = toNumber(data.fillSection.waterLoading, Number.NaN);
+  const resolvedTotalFlow = Number.isFinite(totalWaterFlow)
+    ? totalWaterFlow
+    : Number.isFinite(enteredLoading) && enteredLoading > 0
+      ? enteredLoading * fillArea * cells
+      : 2000;
+
+  const waterFlowPerCell = resolvedTotalFlow / cells;
   const waterLoading = waterFlowPerCell / fillArea;
+
+  const fillLimits = getFillLimits(data.fillSection.fillType || '');
+  const constrainedWaterLoading = clamp(waterLoading, fillLimits.min, fillLimits.max);
+  const thermalLoadingFactor = constrainedWaterLoading / Math.max(waterLoading, 0.01);
 
   const sprayHeight = Math.max(toNumber(data.fillSection.sprayHeight, 0.4), 0.05);
   const fillHeight = Math.max(toNumber(data.fillSection.fillHeight, 1.2), 0.05);
@@ -187,7 +231,7 @@ export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingT
   const lgRatio = solveLgRatio(kaVLAdjusted);
 
   const waterMassFlow = waterFlowPerCell / 3600 * 997;
-  const airMassFlow = waterMassFlow / Math.max(lgRatio, 0.1);
+  const airMassFlow = (waterMassFlow / Math.max(lgRatio, 0.1)) * thermalLoadingFactor;
 
   const inletDBT = wetBulb + 11.4;
   const exitWBT = wetBulb + 10.8;
@@ -250,7 +294,7 @@ export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingT
   const kWTowerTotal = kWPerCell * cells;
 
   const evaporationRatePct = 0.00085 * range * 100;
-  const evaporationRateM3Hr = totalWaterFlow * evaporationRatePct / 100;
+  const evaporationRateM3Hr = resolvedTotalFlow * evaporationRatePct / 100;
 
   const fanCoverage = clamp((fanGrossArea / fillArea) * 100, 0, 100);
   const fanBoxRatio = (fanNetArea / fillArea) * 100;
@@ -356,13 +400,15 @@ export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingT
     diagnosis: {
       closestMatchBasis: Math.abs(kWPerCell - 58.77) < Math.abs(kWTowerTotal - 58.77) ? 'per_cell' : 'tower_total',
       mainMismatchSource:
-        Math.abs(airflowAtFan - 192.73) > 4
-          ? 'airflow mismatch'
-          : Math.abs(fanTotalPressure - 236.68) > 8
-            ? 'fan total pressure mismatch'
-            : Math.abs(effectiveFanEfficiency - 0.7904) > 0.015
-              ? 'fan efficiency mismatch'
-              : 'within expected tolerance'
+        waterLoading < fillLimits.min || waterLoading > fillLimits.max
+          ? 'water loading outside fill limits'
+          : Math.abs(airflowAtFan - 192.73) > 4
+            ? 'airflow mismatch'
+            : Math.abs(fanTotalPressure - 236.68) > 8
+              ? 'fan total pressure mismatch'
+              : Math.abs(effectiveFanEfficiency - 0.7904) > 0.015
+                ? 'fan efficiency mismatch'
+                : 'within expected tolerance'
     }
   };
 
