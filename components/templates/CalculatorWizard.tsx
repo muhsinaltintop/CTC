@@ -8,7 +8,7 @@ import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
 import { ThermalResultsScreen } from '@/components/organisms/ThermalResultsScreen';
-import { calculateThermalResults } from '@/lib/calculations';
+import { calculateCoolingTowerPerformance } from '@/lib/calculations';
 import { initialCalculatorData } from '@/lib/constants';
 import { CalculatorData, ThermalConditions } from '@/lib/types';
 
@@ -184,7 +184,7 @@ export function CalculatorWizard() {
   };
 
   const thermalResults = useMemo(
-    () => calculateThermalResults(calculatorData),
+    () => calculateCoolingTowerPerformance(calculatorData),
     [calculatorData]
   );
 
