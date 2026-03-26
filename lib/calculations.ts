@@ -1,31 +1,58 @@
 import { CalculatorData } from '@/lib/types';
 
-export interface TowerPressureSection {
+interface ThermalKaVL {
+  spray: number;
+  fill: number;
+  fillTotal: number;
+  rain: number;
+  total: number;
+  derate: number;
+  hwtCorrection: number;
+  adjusted: number;
+  lgRatio: number;
+}
+
+interface ThermalMisc {
+  waterLoading: number;
+  pressureRatio: number;
+  lgKaVL: number;
+  fanBoxRatio: number;
+  fanCoverage: number;
+  airflowAtFan: number;
+  effectiveFanEff: number;
+  dryAirRate: number;
+  totalFillHeight: number;
+  fillArea: number;
+  evaporationRatePct: number;
+  evaporationRateM3Hr: number;
+  inletDBT: number;
+  exitWBT: number;
+}
+
+export interface PressureDropRow {
   name: string;
-  velocity: number;
-  pressureDrop: number;
+  netArea?: number;
+  velocity?: number;
+  density?: number;
+  specificVolume?: number;
+  pressureDrop?: number;
 }
 
 export interface CoolingTowerPerformanceResults {
   thermalResults: {
     power: number;
-    KaVL: {
-      spray: number;
-      fill: number;
-      rain: number;
-      total: number;
-      adjusted: number;
-    };
-    LG_ratio: number;
     fillVelocity: number;
+    KaVL: ThermalKaVL;
+    misc: ThermalMisc;
   };
   airflow: {
     airflow_m3s: number;
     dryAirRate: number;
   };
   pressureDrop: {
-    sections: TowerPressureSection[];
+    rows: PressureDropRow[];
     totalStatic: number;
+    netFanVP: number;
     fanTotalPressure: number;
   };
   performance: {
@@ -36,12 +63,7 @@ export interface CoolingTowerPerformanceResults {
   };
 }
 
-const MW_WATER = 18.01528;
-const MW_DRY_AIR = 28.9647;
 const ATM_KPA = 101.325;
-const C_PA_DRY_AIR = 1.005;
-const C_PV = 1.86;
-const H_FG = 2501;
 
 function toNumber(value: string, fallback = 0): number {
   const parsed = Number(value);
@@ -53,184 +75,223 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function saturationPressureKPa(tempC: number): number {
-  // Tetens approximation for 0-60 C
   return 0.61078 * Math.exp((17.2694 * tempC) / (tempC + 237.29));
 }
 
-function humidityRatioFromWetBulb(
-  wetBulbC: number,
-  dryBulbC: number,
-  pressureKPa: number,
-  relativeHumidityPct?: number
-): number {
-  const pwsWb = saturationPressureKPa(wetBulbC);
-  const wSaturatedWB = 0.62198 * pwsWb / Math.max(pressureKPa - pwsWb, 0.01);
-
-  if (relativeHumidityPct !== undefined && relativeHumidityPct > 0) {
-    const rh = clamp(relativeHumidityPct / 100, 0.01, 1);
-    const pwsDb = saturationPressureKPa(dryBulbC);
-    const pw = rh * pwsDb;
-    return 0.62198 * pw / Math.max(pressureKPa - pw, 0.01);
-  }
-
-  // psychrometric approximation from WB/DB pair
-  const numerator = ((H_FG - 2.326 * wetBulbC) * wSaturatedWB) - C_PA_DRY_AIR * (dryBulbC - wetBulbC);
-  const denominator = H_FG + C_PV * dryBulbC - 4.186 * wetBulbC;
-  return clamp(numerator / Math.max(denominator, 0.01), 0.0001, 0.06);
-}
-
-function moistAirDensity(pressureKPa: number, dryBulbC: number, humidityRatio: number): number {
-  const temperatureK = dryBulbC + 273.15;
-  const specificGasConstantMoistAir = 287.042 * (1 + humidityRatio) / (1 + humidityRatio * MW_DRY_AIR / MW_WATER);
-  return (pressureKPa * 1000) / (specificGasConstantMoistAir * temperatureK);
-}
-
-
 function pressureFromAltitude(altitudeM: number): number {
-  // ISA barometric formula
   return ATM_KPA * (1 - 2.25577e-5 * altitudeM) ** 5.2559;
 }
 
-function solveLGRatio(targetKaVL: number): number {
-  // simplified Merkel-demand relation: demand = a*(L/G)^2 + b*(L/G)
-  const a = 0.35;
-  const b = 0.85;
-  let guess = 1.0;
-
-  for (let i = 0; i < 25; i += 1) {
-    const demand = a * guess * guess + b * guess;
-    const residual = demand - targetKaVL;
-
-    if (Math.abs(residual) < 1e-5) {
-      break;
-    }
-
-    const derivative = 2 * a * guess + b;
-    guess -= residual / Math.max(derivative, 1e-5);
-    guess = clamp(guess, 0.1, 3.5);
+function humidityRatio(pressureKPa: number, wetBulbC: number, dryBulbC: number, rhPct: number): number {
+  if (rhPct > 0) {
+    const pw = saturationPressureKPa(dryBulbC) * clamp(rhPct / 100, 0.02, 1);
+    return 0.62198 * pw / Math.max(pressureKPa - pw, 0.1);
   }
 
-  return guess;
+  const pwsWb = saturationPressureKPa(wetBulbC);
+  const ws = 0.62198 * pwsWb / Math.max(pressureKPa - pwsWb, 0.1);
+  const numerator = (2501 - 2.326 * wetBulbC) * ws - 1.005 * (dryBulbC - wetBulbC);
+  const denominator = 2501 + 1.86 * dryBulbC - 4.186 * wetBulbC;
+
+  return clamp(numerator / Math.max(denominator, 0.01), 0.001, 0.05);
+}
+
+function moistAirDensity(pressureKPa: number, dryBulbC: number, w: number): number {
+  const tK = dryBulbC + 273.15;
+  const pPa = pressureKPa * 1000;
+
+  return pPa / (287.05 * tK * (1 + 1.6078 * w));
+}
+
+function solveLGRatio(targetKaVL: number): number {
+  // Simplified Merkel-demand fit with Newton iteration.
+  const a = 0.32;
+  const b = 0.92;
+  let x = 1.25;
+
+  for (let i = 0; i < 30; i += 1) {
+    const f = a * x * x + b * x - targetKaVL;
+    const df = 2 * a * x + b;
+    x = clamp(x - f / Math.max(df, 1e-6), 0.15, 3.5);
+
+    if (Math.abs(f) < 1e-6) break;
+  }
+
+  return x;
+}
+
+function sectionPressureDrop(k: number, density: number, velocity: number): number {
+  return k * (density * velocity * velocity / 2);
 }
 
 export function calculateCoolingTowerPerformance(data: CalculatorData): CoolingTowerPerformanceResults {
   const cells = Math.max(toNumber(data.towerGeometry.noOfCells, 1), 1);
-  const flowM3Hr = Math.max(toNumber(data.thermalConditions.totalWaterFlow), 0.1);
-  const flowM3sPerCell = flowM3Hr / 3600 / cells;
 
-  const coldWater = toNumber(data.thermalConditions.coldWater, 30);
+  const coldWater = toNumber(data.thermalConditions.coldWater, 33);
   const range = Math.max(toNumber(data.thermalConditions.range, 5), 0.1);
   const hotWater = toNumber(data.thermalConditions.hotWater) || coldWater + range;
-  const wetBulb = toNumber(data.thermalConditions.wetBulb, 25);
-  const relativeHumidity = toNumber(data.thermalConditions.relativeHumidity);
+  const wetBulb = toNumber(data.thermalConditions.wetBulb, 27);
+  const rh = toNumber(data.thermalConditions.relativeHumidity, 0);
+  const inletDBT = wetBulb + 3.2;
+  const exitWBT = wetBulb + Math.max(range * 0.18, 0.8);
 
   const pressureKPa = data.thermalConditions.pressureInputMode === 'barometricPressure'
     ? Math.max(toNumber(data.thermalConditions.barometricPressure, ATM_KPA), 70)
     : Math.max(pressureFromAltitude(toNumber(data.thermalConditions.altitude, 0)), 70);
 
-  const width = Math.max(toNumber(data.towerGeometry.cellWidth, 12), 0.1);
-  const length = Math.max(toNumber(data.towerGeometry.cellLength, 16), 0.1);
-  const fillArea = width * length;
+  const width = Math.max(toNumber(data.towerGeometry.cellWidth, 7.9), 0.1);
+  const length = Math.max(toNumber(data.towerGeometry.cellLength, 15.87), 0.1);
+  const fillArea = width * length / Math.max(cells, 1);
 
-  const sprayKaVL = Math.max(toNumber(data.fillSection.sprayHeight, 0.4) * 0.45, 0.01);
-  const fillKaVL = Math.max(toNumber(data.fillSection.fillHeight, 1.2) * 1.05, 0.01);
-  const rainKaVL = Math.max(toNumber(data.fillSection.rainHeight, 2.5) * 0.33, 0.01);
+  const sprayHeight = Math.max(toNumber(data.fillSection.sprayHeight, 0.4), 0.1);
+  const fillHeight = Math.max(toNumber(data.fillSection.fillHeight, 1.22), 0.1);
+  const rainHeight = Math.max(toNumber(data.fillSection.rainHeight, 0.4), 0.1);
 
-  const kaVLTotal = sprayKaVL + fillKaVL + rainKaVL;
-  const kaVLDerate = clamp(toNumber(data.fillSection.kaVLDerate, 1), 0.6, 1.2);
-  const hotWaterCorrectionFactor = clamp(1 + (hotWater - 35) * 0.0055, 0.8, 1.25);
-  const kaVLAdjusted = kaVLTotal * kaVLDerate * hotWaterCorrectionFactor;
+  const sprayKaVL = sprayHeight * 0.39;
+  const fillKaVL = fillHeight * 1.12;
+  const rainKaVL = rainHeight * 0.31;
+  const totalKaVL = sprayKaVL + fillKaVL + rainKaVL;
 
-  const lgRatio = solveLGRatio(kaVLAdjusted);
+  const derate = clamp(toNumber(data.fillSection.kaVLDerate, 1), 0.7, 1.15);
+  const hwtCorrection = clamp(1 + (hotWater - 38) * 0.013, 0.85, 1.25);
+  const adjustedKaVL = totalKaVL * derate * (1 - (hwtCorrection - 1) * 0.12);
 
-  const waterMassFlow = flowM3sPerCell * 997;
+  const lgRatio = solveLGRatio(adjustedKaVL);
+
+  const totalWaterFlowM3Hr = Math.max(toNumber(data.thermalConditions.totalWaterFlow, 1000), 0.1);
+  const waterFlowPerCellM3Hr = totalWaterFlowM3Hr / cells;
+  const waterMassFlow = waterFlowPerCellM3Hr / 3600 * 997;
+
+  const w = humidityRatio(pressureKPa, wetBulb, inletDBT, rh);
+  const densityInlet = moistAirDensity(pressureKPa, inletDBT, w);
   const airMassFlow = waterMassFlow / lgRatio;
+  const airflowM3s = airMassFlow / Math.max(densityInlet, 0.5);
 
-  const inletDryBulb = wetBulb + 3;
-  const humidityRatio = humidityRatioFromWetBulb(
-    wetBulb,
-    inletDryBulb,
-    pressureKPa,
-    relativeHumidity > 0 ? relativeHumidity : undefined
-  );
+  const fanDiameter = Math.max(toNumber(data.plenumFan.fanDiameter, 4.88), 0.5);
+  const fanAreaGross = Math.PI * (fanDiameter ** 2) / 4;
+  const hubDiameter = Math.max(toNumber(data.plenumFan.sealDiskHubDiameter, 0.8), 0.1);
+  const hubArea = Math.PI * (hubDiameter ** 2) / 4;
+  const fanNetArea = Math.max(fanAreaGross - hubArea, 0.1);
 
-  const airDensity = moistAirDensity(pressureKPa, inletDryBulb, humidityRatio);
-  const airflowM3s = airMassFlow / Math.max(airDensity, 0.5);
-  const fillVelocity = airflowM3s / fillArea;
+  const fillVelocity = airflowM3s / Math.max(fillArea, 0.1);
+  const fanVelocity = airflowM3s / fanNetArea;
 
-  const coefficients = {
-    inlet: 1.6,
-    rain: 2.0,
-    fill: 3.2,
-    spray: 1.8,
-    drift: 1.3,
-    fanInlet: Math.max(toNumber(data.plenumFan.fanInletLossCoefficient, 0.2), 0.1)
-  };
-
-  const sectionData: Array<{ name: string; areaFactor: number; k: number }> = [
-    { name: 'Air Inlet', areaFactor: 1.0, k: coefficients.inlet },
-    { name: 'Rain Zone', areaFactor: 0.96, k: coefficients.rain },
-    { name: 'Fill', areaFactor: 0.93, k: coefficients.fill },
-    { name: 'Spray Zone', areaFactor: 0.95, k: coefficients.spray },
-    { name: 'Drift Eliminator', areaFactor: 0.92, k: coefficients.drift },
-    { name: 'Fan Inlet', areaFactor: 0.88, k: coefficients.fanInlet }
+  const sectionDefs = [
+    { name: 'Air Inlet', area: fillArea * 0.63, k: 2.2, densityFactor: 1 },
+    { name: 'Rain Zone', area: fillArea, k: 2.9, densityFactor: 1 },
+    { name: 'Fill', area: fillArea, k: 15.7, densityFactor: 0.993 },
+    { name: 'Spray Zone', area: fillArea, k: 5.3, densityFactor: 0.988 },
+    { name: 'Drift Eliminator', area: fillArea, k: 2.8, densityFactor: 0.988 },
+    { name: 'Fan Inlet', area: fanNetArea, k: Math.max(toNumber(data.plenumFan.fanInletLossCoefficient, 0.2) * 8, 1.6), densityFactor: 0.988 }
   ];
 
-  const sections = sectionData.map(({ name, areaFactor, k }) => {
-    const velocity = airflowM3s / Math.max(fillArea * areaFactor, 0.1);
-    const pressureDrop = k * (velocity ** 2 * airDensity / 2);
+  const rows: PressureDropRow[] = sectionDefs.map((section) => {
+    const density = densityInlet * section.densityFactor;
+    const velocity = airflowM3s / section.area;
+    const drop = sectionPressureDrop(section.k, density, velocity);
 
     return {
-      name,
+      name: section.name,
+      netArea: section.area,
       velocity,
-      pressureDrop
+      density,
+      specificVolume: 1 / Math.max(density, 0.1),
+      pressureDrop: drop
     };
   });
 
-  const totalStatic = sections.reduce((sum, row) => sum + row.pressureDrop, 0);
-  const regainPa = clamp(toNumber(data.plenumFan.fanStackRegain ? '12' : '0'), 0, 20);
-  const buoyancyPa = clamp((hotWater - wetBulb) * 0.8, 0, 25);
-  const velocityPressure = 0.5 * airDensity * fillVelocity ** 2;
-  const fanTotalPressure = Math.max(totalStatic - regainPa - buoyancyPa + velocityPressure, 0);
+  const staticOnly = rows.reduce((sum, row) => sum + (row.pressureDrop || 0), 0);
+  const regain = data.plenumFan.fanStackRegain ? 0 : 0;
+  const buoyancy = -clamp((hotWater - wetBulb) * 0.05, 0, 2);
+  const sumStatic = staticOnly + regain + buoyancy;
 
-  const tipClearanceMm = toNumber(data.plenumFan.fanTipClearance, 24);
-  const designEfficiency = clamp(toNumber(data.plenumFan.totalFanEfficiency, 85) / 100, 0.45, 0.92);
-  const tipCorrection = clamp(1 - (tipClearanceMm - 10) * 0.003, 0.75, 1.02);
-  const fanEfficiency = designEfficiency * tipCorrection;
+  const netFanVP = 0.5 * (rows[rows.length - 1].density || densityInlet) * fanVelocity ** 2;
+  const fanTotalPressure = sumStatic + netFanVP;
 
-  const fanPowerKW = (airflowM3s * fanTotalPressure) / Math.max(fanEfficiency, 0.35) / 1000;
+  const tipClearanceMm = Math.max(toNumber(data.plenumFan.fanTipClearance, 24), 0);
+  const totalFanEff = clamp(toNumber(data.plenumFan.totalFanEfficiency, 85), 40, 95) / 100;
+  const tipFactor = clamp(1 - tipClearanceMm / (fanDiameter * 1000) * 2.1, 0.72, 1.0);
+  const effectiveFanEff = totalFanEff * tipFactor;
 
-  const waterLoading = flowM3Hr / Math.max(fillArea * cells, 0.1);
-  const pressureRatio = fanTotalPressure / Math.max(totalStatic, 1);
-  const lgKaVL = lgRatio * kaVLAdjusted;
+  const fanPowerKW = airflowM3s * fanTotalPressure / Math.max(effectiveFanEff, 0.3) / 1000;
+
+  const waterLoading = waterFlowPerCellM3Hr / fillArea;
+  const fanCoverage = clamp((fanAreaGross / fillArea) * 100, 0, 100);
+  const fanBoxRatio = (fanNetArea / fillArea) * 100;
+
+  const evaporationRatePct = 0.00085 * range * 100;
+  const evaporationRateM3Hr = totalWaterFlowM3Hr * (evaporationRatePct / 100);
+
+  rows.push({ name: 'Regain', pressureDrop: regain });
+  rows.push({ name: 'Bouyancy', pressureDrop: buoyancy });
+  rows.push({ name: 'Sum Static dP', pressureDrop: sumStatic });
+  rows.push({
+    name: 'Net Fan VP',
+    netArea: fanNetArea,
+    velocity: fanVelocity,
+    density: rows[rows.length - 4].density,
+    specificVolume: rows[rows.length - 4].specificVolume,
+    pressureDrop: netFanVP
+  });
+  rows.push({ name: 'Fan Total Pressure', pressureDrop: fanTotalPressure });
+  rows.push({
+    name: 'Stack Exit',
+    netArea: Math.max(toNumber(data.plenumFan.plenumHoleDiameter, 5.6), 0.1) ** 2 * Math.PI / 4,
+    velocity: airflowM3s / Math.max(Math.max(toNumber(data.plenumFan.plenumHoleDiameter, 5.6), 0.1) ** 2 * Math.PI / 4, 0.1),
+    density: rows[rows.length - 3].density,
+    specificVolume: rows[rows.length - 3].specificVolume,
+    pressureDrop: 0.5 * densityInlet * (airflowM3s / Math.max(Math.max(toNumber(data.plenumFan.plenumHoleDiameter, 5.6), 0.1) ** 2 * Math.PI / 4, 0.1)) ** 2
+  });
+
+  const thermalResults = {
+    power: fanPowerKW,
+    fillVelocity,
+    KaVL: {
+      spray: sprayKaVL,
+      fill: fillKaVL,
+      fillTotal: fillKaVL,
+      rain: rainKaVL,
+      total: totalKaVL,
+      derate,
+      hwtCorrection,
+      adjusted: adjustedKaVL,
+      lgRatio
+    },
+    misc: {
+      waterLoading,
+      pressureRatio: fanTotalPressure / Math.max(netFanVP, 0.01),
+      lgKaVL: lgRatio * adjustedKaVL,
+      fanBoxRatio,
+      fanCoverage,
+      airflowAtFan: airflowM3s,
+      effectiveFanEff: effectiveFanEff * 100,
+      dryAirRate: airMassFlow,
+      totalFillHeight: fillHeight,
+      fillArea,
+      evaporationRatePct,
+      evaporationRateM3Hr,
+      inletDBT,
+      exitWBT
+    }
+  };
 
   return {
-    thermalResults: {
-      power: fanPowerKW,
-      KaVL: {
-        spray: sprayKaVL,
-        fill: fillKaVL,
-        rain: rainKaVL,
-        total: kaVLTotal,
-        adjusted: kaVLAdjusted
-      },
-      LG_ratio: lgRatio,
-      fillVelocity
-    },
+    thermalResults,
     airflow: {
       airflow_m3s: airflowM3s,
       dryAirRate: airMassFlow
     },
     pressureDrop: {
-      sections,
-      totalStatic,
+      rows,
+      totalStatic: sumStatic,
+      netFanVP,
       fanTotalPressure
     },
     performance: {
-      waterLoading,
-      pressureRatio,
-      LG_KaVL: lgKaVL,
-      fanEfficiency: fanEfficiency * 100
+      waterLoading: thermalResults.misc.waterLoading,
+      pressureRatio: thermalResults.misc.pressureRatio,
+      LG_KaVL: thermalResults.misc.lgKaVL,
+      fanEfficiency: thermalResults.misc.effectiveFanEff
     }
   };
 }
