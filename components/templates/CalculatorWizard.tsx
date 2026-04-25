@@ -8,7 +8,7 @@ import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
 import { initialCalculatorData } from '@/lib/constants';
-import { CalculatorData, ThermalConditions } from '@/lib/types';
+import { CalculatorData, FillSection, ThermalConditions } from '@/lib/types';
 
 function toNumber(value: string): number | null {
   if (!value.trim()) return null;
@@ -44,6 +44,35 @@ function calculateThermalFields(
     hotWater: hotWaterCalculated !== null ? String(hotWaterCalculated) : '',
     range: rangeCalculated !== null ? String(rangeCalculated) : '',
     approach: approachCalculated !== null ? String(approachCalculated) : ''
+  };
+}
+
+function formatTwo(value: number): string {
+  return value.toFixed(2);
+}
+
+function calculateFillDerivedFields(
+  fillSection: FillSection,
+  noOfCells: string,
+  cellWidth: string,
+  cellLength: string,
+  totalWaterFlow: string
+): Pick<FillSection, 'waterLoading'> {
+  const grossFillArea =
+    (toNumber(noOfCells) ?? 0) *
+    (toNumber(cellWidth) ?? 0) *
+    (toNumber(cellLength) ?? 0);
+
+  const effectiveFillArea =
+    grossFillArea * (1 - (toNumber(fillSection.fillObstruction) ?? 0) / 100);
+
+  const waterLoading =
+    effectiveFillArea > 0
+      ? (toNumber(totalWaterFlow) ?? 0) / effectiveFillArea
+      : 0;
+
+  return {
+    waterLoading: formatTwo(waterLoading)
   };
 }
 
@@ -157,6 +186,13 @@ export function CalculatorWizard() {
     setCalculatorData((prev) => {
       const merged = { ...prev.thermalConditions, ...value };
       const calculated = calculateThermalFields(merged);
+      const fillDerived = calculateFillDerivedFields(
+        prev.fillSection,
+        prev.towerGeometry.noOfCells,
+        prev.towerGeometry.cellWidth,
+        prev.towerGeometry.cellLength,
+        merged.totalWaterFlow
+      );
 
       if ('pressureInputMode' in value) {
         if (value.pressureInputMode === 'altitude')
@@ -171,6 +207,10 @@ export function CalculatorWizard() {
         thermalConditions: {
           ...merged,
           ...calculated
+        },
+        fillSection: {
+          ...prev.fillSection,
+          ...fillDerived
         }
       };
     });
@@ -254,13 +294,29 @@ export function CalculatorWizard() {
             canEdit={activeStep !== 2}
             onEdit={() => activateStep(2)}
             onChange={(value) =>
-              setCalculatorData((prev) => ({
-                ...prev,
-                towerGeometry: {
+              setCalculatorData((prev) => {
+                const mergedTowerGeometry = {
                   ...prev.towerGeometry,
                   ...value
+                };
+
+                const fillDerived = calculateFillDerivedFields(
+                  prev.fillSection,
+                  mergedTowerGeometry.noOfCells,
+                  mergedTowerGeometry.cellWidth,
+                  mergedTowerGeometry.cellLength,
+                  prev.thermalConditions.totalWaterFlow
+                );
+
+                return {
+                ...prev,
+                towerGeometry: mergedTowerGeometry,
+                fillSection: {
+                  ...prev.fillSection,
+                  ...fillDerived
                 }
-              }))
+              };
+              })
             }
             onNext={() => {
               activateStep(3);
@@ -276,14 +332,33 @@ export function CalculatorWizard() {
             onEdit={() => activateStep(3)}
             onNext={() => activateStep(4)}
             onChange={(value) =>
-              setCalculatorData((prev) => ({
-                ...prev,
-                fillSection: {
+              setCalculatorData((prev) => {
+                const mergedFillSection = {
                   ...prev.fillSection,
                   ...value
+                };
+
+                const fillDerived = calculateFillDerivedFields(
+                  mergedFillSection,
+                  prev.towerGeometry.noOfCells,
+                  prev.towerGeometry.cellWidth,
+                  prev.towerGeometry.cellLength,
+                  prev.thermalConditions.totalWaterFlow
+                );
+
+                return {
+                ...prev,
+                fillSection: {
+                  ...mergedFillSection,
+                  ...fillDerived
                 }
-              }))
+              };
+              })
             }
+            numberOfCells={calculatorData.towerGeometry.noOfCells}
+            cellWidth={calculatorData.towerGeometry.cellWidth}
+            cellLength={calculatorData.towerGeometry.cellLength}
+            totalWaterFlow={calculatorData.thermalConditions.totalWaterFlow}
           />
 
           <PlenumFanStep
