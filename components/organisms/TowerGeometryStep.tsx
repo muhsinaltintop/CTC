@@ -83,8 +83,10 @@ export function TowerGeometryStep({
 
   const totalLengthOfTower = noOfCells * cellLength;
 
-  const netTotalInletArea =
-    noOfCells * inletHeight * cellWidth * (1 - obstruction / 100);
+  const grossTotalInletArea = (2 * totalLengthOfTower + 2 * cellWidth) * inletHeight;
+  const netTotalInletArea = grossTotalInletArea * (1 - obstruction / 100);
+  const hasWidthInputs =
+    data.cellWidth.trim().length > 0 && data.cellLength.trim().length > 0;
 
   const previewCells = Math.max(1, Math.min(30, noOfCells || 1));
   const isBackToBack = data.cellArrangement === 'backToBack';
@@ -507,6 +509,7 @@ export function TowerGeometryStep({
                   onChange={(event) =>
                     onChange({ cellWidth: event.target.value })
                   }
+                  required
                   disabled={!editable}
                 />
 
@@ -519,6 +522,7 @@ export function TowerGeometryStep({
                   onChange={(event) =>
                     onChange({ cellLength: event.target.value })
                   }
+                  required
                   disabled={!editable}
                 />
               </div>
@@ -536,7 +540,9 @@ export function TowerGeometryStep({
 
           {editable && (
             <div className="mt-5 flex justify-end">
-              <Button onClick={onNext}>Next: Fill Section</Button>
+              <Button onClick={onNext} disabled={!hasWidthInputs}>
+                Next: Fill Section
+              </Button>
             </div>
           )}
         </>
