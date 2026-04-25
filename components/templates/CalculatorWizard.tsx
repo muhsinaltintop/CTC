@@ -7,6 +7,7 @@ import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
 import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
+import { ResultsPage } from '@/components/organisms/ResultsPage';
 import { initialCalculatorData } from '@/lib/constants';
 import {
   CalculatorData,
@@ -125,6 +126,7 @@ function calculatePlenumDerivedFields(
 
 export function CalculatorWizard() {
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [showResults, setShowResults] = useState(false);
   const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3 | 4 | 5, boolean>>({
     0: true,
     1: false,
@@ -475,7 +477,11 @@ export function CalculatorWizard() {
             onNext={() => activateStep(5)}
           />
 
-          {activeStep === 5 ? <ReviewRunCalculationsStep /> : null}
+          {activeStep === 5 ? (
+            <ReviewRunCalculationsStep onRunCalculations={() => setShowResults(true)} />
+          ) : null}
+
+          {showResults ? <ResultsPage data={calculatorData} /> : null}
         </div>
 
         {/* RIGHT — SUMMARY */}
