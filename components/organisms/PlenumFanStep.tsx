@@ -6,6 +6,8 @@ import { PlenumFan } from '@/lib/types';
 
 interface PlenumFanStepProps {
   data: PlenumFan;
+  totalHeight: string;
+  plenumHeightError: string;
   isOpen: boolean;
   editable: boolean;
   canEdit: boolean;
@@ -20,6 +22,8 @@ const driftEliminatorOptions = [{ value: 'CF80MAx', label: 'CF80MAx' }];
 
 export function PlenumFanStep({
   data,
+  totalHeight,
+  plenumHeightError,
   isOpen,
   editable,
   canEdit,
@@ -159,8 +163,8 @@ export function PlenumFanStep({
               step="0.01"
               label="Plenum Height (m)"
               value={data.plenumHeight}
-              onChange={(event) => onChange({ plenumHeight: event.target.value })}
-              disabled={!editable}
+              readOnly
+              disabled
             />
 
             <Input
@@ -197,6 +201,17 @@ export function PlenumFanStep({
               disabled={!editable}
             />
           </div>
+
+          <p className="mt-3 text-sm font-medium text-slate-700">
+            Total Height (Fill + Spray + Rain):{' '}
+            <span className="font-semibold text-slate-900">{totalHeight} m</span>
+          </p>
+
+          {plenumHeightError ? (
+            <p className="mt-2 text-sm font-medium text-rose-600">
+              {plenumHeightError}
+            </p>
+          ) : null}
 
           {editable ? (
             <div className="mt-5 flex justify-end gap-3">
