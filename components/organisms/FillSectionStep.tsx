@@ -6,6 +6,10 @@ import { FillSection } from '@/lib/types';
 
 interface FillSectionStepProps {
   data: FillSection;
+  numberOfCells: string;
+  cellWidth: string;
+  cellLength: string;
+  totalWaterFlow: string;
   isOpen: boolean;
   onToggle: () => void;
   editable: boolean;
@@ -49,6 +53,10 @@ function calcTotalFillHeight(fills: string[]): string {
 
 export function FillSectionStep({
   data,
+  numberOfCells,
+  cellWidth,
+  cellLength,
+  totalWaterFlow,
   isOpen,
   onToggle,
   editable,
@@ -58,6 +66,15 @@ export function FillSectionStep({
   onChange
 }: FillSectionStepProps) {
   const fillStack = data.fills ?? [];
+
+  const grossFillArea =
+    toNumber(numberOfCells) * toNumber(cellWidth) * toNumber(cellLength);
+
+  const effectiveFillArea =
+    grossFillArea * (1 - toNumber(data.fillObstruction) / 100);
+
+  const calculatedWaterLoading =
+    effectiveFillArea > 0 ? toNumber(totalWaterFlow) / effectiveFillArea : 0;
 
   const totalHeight =
     toNumber(data.sprayHeight) +
@@ -298,10 +315,24 @@ export function FillSectionStep({
             type="number"
             step="0.01"
             label="Water Loading (m3/hr-m2)"
-            value={data.waterLoading}
-            onChange={(event) => onChange({ waterLoading: event.target.value })}
-            disabled={!editable}
+            value={formatTwo(calculatedWaterLoading)}
+            readOnly
+            disabled
           />
+
+          <p className="text-sm font-medium text-slate-700">
+            Gross Fill Area:{' '}
+            <span className="font-semibold text-slate-900">
+              {formatTwo(grossFillArea)} m2
+            </span>
+          </p>
+
+          <p className="text-sm font-medium text-slate-700">
+            Effective Fill Area:{' '}
+            <span className="font-semibold text-slate-900">
+              {formatTwo(effectiveFillArea)} m2
+            </span>
+          </p>
         </div>
           </div>
 
