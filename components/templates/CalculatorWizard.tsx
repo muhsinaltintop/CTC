@@ -18,22 +18,33 @@ function toNumber(value: string): number | null {
 
 function calculateThermalFields(
   data: ThermalConditions
-): Pick<ThermalConditions, 'hotWater' | 'approach'> {
+): Pick<ThermalConditions, 'hotWater' | 'range' | 'approach'> {
   const coldWater = toNumber(data.coldWater);
+  const hotWaterInput = toNumber(data.hotWater);
   const range = toNumber(data.range);
   const wetBulb = toNumber(data.wetBulb);
+  const approachInput = toNumber(data.approach);
 
-  const hotWater =
+  const hotWaterCalculated =
     coldWater !== null && range !== null
-      ? String(coldWater + range)
-      : '';
+      ? coldWater + range
+      : hotWaterInput;
 
-  const approach =
+  const rangeCalculated =
+    coldWater !== null && hotWaterCalculated !== null
+      ? hotWaterCalculated - coldWater
+      : range;
+
+  const approachCalculated =
     coldWater !== null && wetBulb !== null
-      ? String(coldWater - wetBulb)
-      : '';
+      ? coldWater - wetBulb
+      : approachInput;
 
-  return { hotWater, approach };
+  return {
+    hotWater: hotWaterCalculated !== null ? String(hotWaterCalculated) : '',
+    range: rangeCalculated !== null ? String(rangeCalculated) : '',
+    approach: approachCalculated !== null ? String(approachCalculated) : ''
+  };
 }
 
 export function CalculatorWizard() {

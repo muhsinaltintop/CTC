@@ -40,7 +40,8 @@ export function ThermalConditionsStep({
   onNext,
   onEdit
 }: ThermalConditionsStepProps) {
-  const canFillTowerCapability = data.solveFor !== 'towerCapability';
+  const canFillTowerCapability =
+    data.solveFor !== 'towerCapability' && data.solveFor !== 'power';
   const canFillPower =
     data.solveFor === 'towerCapability' ||
     data.solveFor === 'coldWater' ||
