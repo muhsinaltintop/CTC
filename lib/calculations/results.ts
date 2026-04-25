@@ -38,16 +38,66 @@ function fanTipClearanceDerateFactor(fanTipClearanceMm: number): number {
   return Math.max(0.75, 0.9278 - (fanTipClearanceMm - 24) * 0.002);
 }
 
-function estimateInletDbtC(wetBulbC: number, relativeHumidityPercent: number): number {
-  const rh = Math.min(99, Math.max(5, relativeHumidityPercent));
-  return (
-    wetBulbC -
-    0.151977 * Math.sqrt(rh + 8.313659) +
-    Math.atan(wetBulbC + rh) -
-    Math.atan(rh - 1.676331) +
-    0.00391838 * rh ** 1.5 * Math.atan(0.023101 * rh) -
-    4.686035
-  );
+function saturationPressureKPa(tempC: number): number {
+  return 0.61078 * Math.exp((17.2694 * tempC) / (tempC + 237.29));
+}
+
+function barometricPressureFromAltitude(altitudeM: number): number {
+  return 101.325 * (1 - 2.25577e-5 * altitudeM) ** 5.25588;
+}
+
+function estimateInletDbtC(
+  wetBulbC: number,
+  relativeHumidityPercent: number,
+  barometricPressureKPa: number
+): number {
+  const rh = Math.min(99, Math.max(1, relativeHumidityPercent)) / 100;
+  const p = Math.max(60, barometricPressureKPa);
+  const pwsWb = saturationPressureKPa(wetBulbC);
+  const psychrometricConstant = 0.00066 * (1 + 0.00115 * wetBulbC);
+
+  const solveResidual = (dryBulbC: number): number => {
+    const actualVaporPressureFromRh = rh * saturationPressureKPa(dryBulbC);
+    const actualVaporPressureFromWb =
+      pwsWb - psychrometricConstant * p * (dryBulbC - wetBulbC);
+    return actualVaporPressureFromRh - actualVaporPressureFromWb;
+  };
+
+  let low = wetBulbC;
+  let high = wetBulbC + 40;
+
+  for (let i = 0; i < 60; i += 1) {
+    const mid = (low + high) / 2;
+    const residual = solveResidual(mid);
+
+    if (residual > 0) high = mid;
+    else low = mid;
+  }
+
+  return (low + high) / 2;
+}
+
+function inletOpenPerimeterFactor(
+  configuration: CalculatorData['towerGeometry']['airInletConfiguration']
+) {
+  switch (configuration) {
+    case 'bothEndsOpen':
+      return { longSideCount: 2, shortSideCount: 2 };
+    case 'bothEndsClosed':
+      return { longSideCount: 2, shortSideCount: 0 };
+    case 'leftEndClosed':
+    case 'rightEndClosed':
+      return { longSideCount: 2, shortSideCount: 1 };
+    case 'threeSidesClosed':
+      return { longSideCount: 1, shortSideCount: 0 };
+    default:
+      return { longSideCount: 2, shortSideCount: 2 };
+  }
+}
+
+function stackExitAreaFromFanStackData(cells: number): number {
+  const defaultStackExitAreaPerCell = 2.6;
+  return defaultStackExitAreaPerCell * cells;
 }
 
 export function calculateResults(data: CalculatorData): CalculatedResults {
@@ -61,6 +111,15 @@ export function calculateResults(data: CalculatorData): CalculatedResults {
   const relativeHumidity = toNumber(data.thermalConditions.relativeHumidity, 70);
   const range = Math.max(0, toNumber(data.thermalConditions.range, 10));
   const hotWater = toNumber(data.thermalConditions.hotWater, wetBulb + range + 3);
+  const altitude = toNumber(data.thermalConditions.altitude, 0);
+  const pressureInputMode = data.thermalConditions.pressureInputMode;
+  const barometricPressure =
+    pressureInputMode === 'barometricPressure'
+      ? toNumber(
+          data.thermalConditions.barometricPressure,
+          barometricPressureFromAltitude(altitude)
+        )
+      : barometricPressureFromAltitude(altitude);
 
   const fillObstructionPercent = toNumber(data.fillSection.fillObstruction, 1);
   const driftObstructionPercent = toNumber(data.plenumFan.driftObstruction, 2);
@@ -95,17 +154,20 @@ export function calculateResults(data: CalculatorData): CalculatedResults {
   const fillNetAreaTotal = grossFillAreaTotal * (1 - fillObstructionPercent / 100);
   const driftNetAreaTotal = grossFillAreaTotal * (1 - driftObstructionPercent / 100);
 
+  const towerLength = cellLength * cells;
+  const { longSideCount, shortSideCount } = inletOpenPerimeterFactor(
+    data.towerGeometry.airInletConfiguration
+  );
+  const grossInletArea =
+    longSideCount * towerLength * inletHeight +
+    shortSideCount * cellWidth * inletHeight;
   const netTotalInletArea =
-    (2 * inletHeight * (cellLength + cellWidth) * cells *
-      (1 - toNumber(data.towerGeometry.inletObstruction, 1) / 100)) /
-    2.9;
+    grossInletArea * (1 - toNumber(data.towerGeometry.inletObstruction, 5) / 100);
 
   const fanInletAreaPerCell = (PI * (fanDiameter ** 2 - sealDiskHubDiameter ** 2)) / 4;
   const fanInletAreaTotal = fanInletAreaPerCell * cells;
 
-  const stackExitDiameter = fanDiameter * 1.08;
-  const stackExitAreaPerCell = (PI * stackExitDiameter ** 2) / 4;
-  const stackExitAreaTotal = stackExitAreaPerCell * cells;
+  const stackExitAreaTotal = stackExitAreaFromFanStackData(cells);
 
   const totalAirflow = airflowAtFanPerCell * cells;
 
@@ -191,8 +253,17 @@ export function calculateResults(data: CalculatorData): CalculatedResults {
   const evaporationRatePercent = range / 5.6;
   const evaporationRateM3Hr = totalWaterFlow * evaporationRatePercent / 100;
 
-  const inletDbt = estimateInletDbtC(wetBulb, relativeHumidity);
-  const exitWbt = wetBulb + Math.max(0.8, range * 0.58);
+  const inletDbt = estimateInletDbtC(wetBulb, relativeHumidity, barometricPressure);
+  const exitWbt = wetBulb + range * 0.98;
+  const fanArea = (PI * fanDiameter ** 2) / 4;
+  const fanBoxRatioPercent = (fanArea / Math.max(grossFillAreaPerCell, 0.001)) * 100;
+  const plenumHeight = toNumber(data.plenumFan.plenumHeight, 0);
+  const coverageDiameter = fanDiameter + 2 * plenumHeight;
+  const coverageArea = (PI * coverageDiameter ** 2) / 4;
+  const fanCoveragePercent = Math.min(
+    100,
+    (coverageArea / Math.max(grossFillAreaPerCell, 0.001)) * 100
+  );
 
   return {
     topValues: [
@@ -219,11 +290,11 @@ export function calculateResults(data: CalculatorData): CalculatedResults {
       { label: 'L/G * KaV/L', value: round(LGxKaVL, 2).toFixed(2) },
       {
         label: 'Fan: Box Ratio',
-        value: `${round((((PI * fanDiameter ** 2) / 4) / Math.max(grossFillAreaPerCell, 0.001)) * 100, 1).toFixed(1)} %`
+        value: `${round(fanBoxRatioPercent, 1).toFixed(1)} %`
       },
       {
         label: 'Fan Coverage',
-        value: `${round((((PI * fanDiameter ** 2) / 4) / Math.max(fillAreaPerCell, 0.001)) * 100, 1).toFixed(1)} %`
+        value: `${round(fanCoveragePercent, 1).toFixed(1)} %`
       },
       { label: 'Airflow @ Fan', value: `${round(airflowAtFanPerCell, 3).toFixed(3)} m3/s/cell` },
       { label: 'Effective Fan Eff.', value: `${round(effectiveFanEfficiency, 2).toFixed(2)} %` },
