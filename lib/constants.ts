@@ -41,7 +41,7 @@ export const initialCalculatorData: CalculatorData = {
     inletObstruction: '1.0',
     inletHeight: '',
     cellWidth: '',
-    cellLength: '16'
+    cellLength: ''
   },
 
   fillSection: {
