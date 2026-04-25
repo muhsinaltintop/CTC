@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProjectInformationStep } from '@/components/organisms/ProjectInformationStep';
 import { ThermalConditionsStep } from '@/components/organisms/ThermalConditionsStep';
 import { TowerGeometryStep } from '@/components/organisms/TowerGeometryStep';
@@ -8,7 +8,12 @@ import { FillSectionStep } from '@/components/organisms/FillSectionStep';
 import { PlenumFanStep } from '@/components/organisms/PlenumFanStep';
 import { ReviewRunCalculationsStep } from '@/components/organisms/ReviewRunCalculationsStep';
 import { initialCalculatorData } from '@/lib/constants';
-import { CalculatorData, FillSection, ThermalConditions } from '@/lib/types';
+import {
+  CalculatorData,
+  FillSection,
+  PlenumFan,
+  ThermalConditions
+} from '@/lib/types';
 
 function toNumber(value: string): number | null {
   if (!value.trim()) return null;
@@ -76,6 +81,48 @@ function calculateFillDerivedFields(
   };
 }
 
+function calculatePlenumDerivedFields(
+  fillSection: FillSection,
+  plenumFan: PlenumFan
+): {
+  totalHeight: string;
+  plenumHeight: string;
+  plenumHeightError: string;
+} {
+  const totalHeight =
+    (toNumber(fillSection.fillHeight) ?? 0) +
+    (toNumber(fillSection.sprayHeight) ?? 0) +
+    (toNumber(fillSection.rainHeight) ?? 0);
+
+  const fanDeckHeight = toNumber(plenumFan.fanDeckHeight);
+  const sprayToTopOfDrift = toNumber(plenumFan.sprayToTopOfDrift);
+
+  if (fanDeckHeight === null || sprayToTopOfDrift === null) {
+    return {
+      totalHeight: formatTwo(totalHeight),
+      plenumHeight: '',
+      plenumHeightError: ''
+    };
+  }
+
+  const plenumHeight = fanDeckHeight - totalHeight - sprayToTopOfDrift;
+
+  if (plenumHeight < 0) {
+    return {
+      totalHeight: formatTwo(totalHeight),
+      plenumHeight: '',
+      plenumHeightError:
+        'Validation error: plenum height cannot be negative. Increase fan deck height or reduce internal heights.'
+    };
+  }
+
+  return {
+    totalHeight: formatTwo(totalHeight),
+    plenumHeight: formatTwo(plenumHeight),
+    plenumHeightError: ''
+  };
+}
+
 export function CalculatorWizard() {
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [openSteps, setOpenSteps] = useState<Record<0 | 1 | 2 | 3 | 4 | 5, boolean>>({
@@ -89,6 +136,35 @@ export function CalculatorWizard() {
 
   const [calculatorData, setCalculatorData] =
     useState<CalculatorData>(initialCalculatorData);
+
+  const plenumDerived = useMemo(
+    () =>
+      calculatePlenumDerivedFields(
+        calculatorData.fillSection,
+        calculatorData.plenumFan
+      ),
+    [calculatorData.fillSection, calculatorData.plenumFan]
+  );
+
+  useEffect(() => {
+    if (calculatorData.plenumFan.plenumHeight === plenumDerived.plenumHeight) {
+      return;
+    }
+
+    setCalculatorData((prev) => ({
+      ...prev,
+      plenumFan: {
+        ...prev.plenumFan,
+        plenumHeight: calculatePlenumDerivedFields(
+          prev.fillSection,
+          prev.plenumFan
+        ).plenumHeight
+      }
+    }));
+  }, [
+    calculatorData.plenumFan.plenumHeight,
+    plenumDerived.plenumHeight
+  ]);
 
   /* ---------------- SUMMARY ---------------- */
 
@@ -351,6 +427,13 @@ export function CalculatorWizard() {
                 fillSection: {
                   ...mergedFillSection,
                   ...fillDerived
+                },
+                plenumFan: {
+                  ...prev.plenumFan,
+                  plenumHeight: calculatePlenumDerivedFields(
+                    mergedFillSection,
+                    prev.plenumFan
+                  ).plenumHeight
                 }
               };
               })
@@ -363,19 +446,31 @@ export function CalculatorWizard() {
 
           <PlenumFanStep
             data={calculatorData.plenumFan}
+            totalHeight={plenumDerived.totalHeight}
+            plenumHeightError={plenumDerived.plenumHeightError}
             isOpen={openSteps[4]}
             onToggle={() => toggleStepOpen(4)}
             editable={activeStep === 4}
             canEdit={activeStep !== 4}
             onEdit={() => activateStep(4)}
             onChange={(value) =>
-              setCalculatorData((prev) => ({
-                ...prev,
-                plenumFan: {
+              setCalculatorData((prev) => {
+                const mergedPlenumFan = {
                   ...prev.plenumFan,
                   ...value
-                }
-              }))
+                };
+
+                return {
+                  ...prev,
+                  plenumFan: {
+                    ...mergedPlenumFan,
+                    plenumHeight: calculatePlenumDerivedFields(
+                      prev.fillSection,
+                      mergedPlenumFan
+                    ).plenumHeight
+                  }
+                };
+              })
             }
             onNext={() => activateStep(5)}
           />
